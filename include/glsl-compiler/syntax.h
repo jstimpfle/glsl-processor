@@ -1,3 +1,4 @@
+#include <glsl-compiler/parse.h>  // TODO: unify these two files
 typedef char *String; // XXX
 
 typedef int Expr;
@@ -5,17 +6,18 @@ typedef int Stmt;
 typedef int TypeExpr;
 
 enum {
-        BINOP_CMP_EQ,
-        BINOP_CMP_NE,
-        BINOP_CMP_LT,
-        BINOP_CMP_LE,
-        BINOP_CMP_GT,
-        BINOP_CMP_GE,
+        BINOP_EQ,
+        BINOP_NE,
+        BINOP_LT,
+        BINOP_LE,
+        BINOP_GT,
+        BINOP_GE,
         BINOP_PLUS,
         BINOP_MINUS,
         BINOP_MUL,
         BINOP_DIV,
         BINOP_ASSIGN,
+        NUM_BINOP_KINDS,
 };
 
 enum {
@@ -118,3 +120,17 @@ struct DirectiveNode {
                 struct FuncdefDirective tFuncdef;
         } data;
 };
+
+struct BinopInfo {
+        char *text;
+};
+
+struct BinopTokenInfo {
+        int tokenKind;
+        int binopKind;
+};
+
+extern const char *const tokenKindString[NUM_TOKEN_KINDS];
+extern const struct BinopInfo binopInfo[NUM_BINOP_KINDS];
+extern const struct BinopTokenInfo binopTokenInfo[];
+extern const int numBinopTokens;

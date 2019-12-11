@@ -12,6 +12,17 @@ enum {
         TOKEN_RIGHTBRACE,
         TOKEN_COMMA,
         TOKEN_SEMICOLON,
+        TOKEN_PLUS,
+        TOKEN_MINUS,
+        TOKEN_SLASH,
+        TOKEN_STAR,
+        TOKEN_EQUALS,
+        TOKEN_DOUBLEEQUALS,
+        TOKEN_NE,
+        TOKEN_LT,
+        TOKEN_LE,
+        TOKEN_GE,
+        TOKEN_GT,
         NUM_TOKEN_KINDS
 };
 
@@ -31,8 +42,6 @@ struct Ctx {
         int tokenBufferLength;
         int tokenBufferCapacity;
 };
-
-const char *const tokenKindString[NUM_TOKEN_KINDS];
 
 void setup_ctx(struct Ctx *ctx);
 void teardown_ctx(struct Ctx *ctx);
