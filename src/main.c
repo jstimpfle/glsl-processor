@@ -1,7 +1,6 @@
 #include <glsl-compiler/logging.h>
 #include <glsl-compiler/syntax.h>
-#include <glsl-compiler/lex.h>
-#include <glsl-compiler/str.h>
+#include <glsl-compiler/parse.h>
 #include <stdio.h>
 
 int main(void)
@@ -10,5 +9,6 @@ int main(void)
         struct Ctx ctx;
         setup_ctx(&ctx);
         parse(&ctx);
+        teardown_ctx(&ctx);
         return 0;
 }

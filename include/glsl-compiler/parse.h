@@ -1,6 +1,8 @@
-#include <stdio.h>
+#ifndef GLSLCOMPILER_PARSE_H_INCLUDED
+#define GLSLCOMPILER_PARSE_H_INCLUDED
 
 enum {
+        TOKEN_EOF,
         TOKEN_LITERAL,
         TOKEN_NAME,
         TOKEN_STRING,
@@ -8,6 +10,8 @@ enum {
         TOKEN_RIGHTPAREN,
         TOKEN_LEFTBRACE,
         TOKEN_RIGHTBRACE,
+        TOKEN_COMMA,
+        TOKEN_SEMICOLON,
         NUM_TOKEN_KINDS
 };
 
@@ -21,7 +25,7 @@ struct Ctx {
         /* this is backing storage for dynamically allocated token data. It is
          * valid only for the last token that was lexed using this context. */
         int haveSavedToken;
-        int tokenKind;
+        int tokenKind; // this will always be valid, even if !haveSavedToken
         double tokenFloatingValue;
         char *tokenBuffer;
         int tokenBufferLength;
@@ -32,7 +36,7 @@ const char *const tokenKindString[NUM_TOKEN_KINDS];
 
 void setup_ctx(struct Ctx *ctx);
 void teardown_ctx(struct Ctx *ctx);
-int read_token(struct Ctx *ctx);
-
 
 void parse(struct Ctx *ctx);
+
+#endif

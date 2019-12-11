@@ -1,4 +1,4 @@
-#include <glsl-compiler/str.h>
+typedef char *String; // XXX
 
 typedef int Expr;
 typedef int Stmt;
