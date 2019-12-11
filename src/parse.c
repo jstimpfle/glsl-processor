@@ -52,6 +52,7 @@ static struct {
         { ')', TOKEN_RIGHTPAREN },
         { '{', TOKEN_LEFTBRACE },
         { '}', TOKEN_RIGHTBRACE },
+        { ',', TOKEN_COMMA },
         { ';', TOKEN_SEMICOLON },
         { '+', TOKEN_PLUS },
         { '-', TOKEN_MINUS },
@@ -317,9 +318,16 @@ static void parse_uniform(struct Ctx *ctx)
 {
         message_f("Uniform!");
         consume_token(ctx); // uniform
+        int startPosition = ctx->cursorPos;
         parse_type(ctx);
         parse_name(ctx);
         parse_semicolon(ctx);
+        int endPosition = ctx->cursorPos;
+        message_begin();
+        message_write_f("uniform ");
+        message_write(ctx->fileContents + startPosition,
+                      endPosition - startPosition);
+        message_end();
 }
 
 static void parse_expression(struct Ctx *ctx)
@@ -396,16 +404,35 @@ static void parse_stmt(struct Ctx *ctx)
 
 static void parse_function(struct Ctx *ctx)
 {
-        message_f("Function!");
+        int startCursorPos = ctx->cursorPos - ctx->tokenBufferLength - 1; // hack
+        message_f("Function!", ctx->tokenBufferLength);
         parse_type_or_void(ctx);
         parse_name(ctx);
         parse_simple_token(ctx, TOKEN_LEFTPAREN);
+        if (!look_simple_token(ctx, TOKEN_RIGHTPAREN)) {
+                for (;;) {
+                        parse_type(ctx);
+                        parse_name(ctx);
+                        if (!look_simple_token(ctx, TOKEN_COMMA))
+                                break;
+                        consume_token(ctx);
+                }
+        }
         parse_simple_token(ctx, TOKEN_RIGHTPAREN);
+        int endCursorPos = ctx->cursorPos;
         if (look_simple_token(ctx, TOKEN_SEMICOLON)) {
                 // it's only a decl
                 consume_token(ctx);
         }
         else {
+                // HACK: try two write out prototype without much fuss
+                message_begin();
+                message_write_f("FUNCTION ");
+                message_write(ctx->fileContents + startCursorPos,
+                              endCursorPos - startCursorPos);
+                message_write_f(";");
+                message_end();
+
                 parse_simple_token(ctx, TOKEN_LEFTBRACE);
                 while (!look_simple_token(ctx, TOKEN_RIGHTBRACE))
                         parse_stmt(ctx);
@@ -434,7 +461,7 @@ void setup_ctx(struct Ctx *ctx)
 {
         static char contents[] =
                 "uniform vec4 test;\n"
-                "void main()\n"
+                "void main(float x, float y, float w)\n"
                 "{\n"
                 "    if (a + 3)\n"
                 "    discard;\n"

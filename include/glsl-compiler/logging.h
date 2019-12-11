@@ -18,6 +18,7 @@ struct LogCtx {
 void _message_begin(struct LogCtx logCtx);
 void message_write_fv(const char *fmt, va_list ap);
 void message_write_f(const char *fmt, ...);
+void message_write(const char *data, int length);
 void message_end(void);
 void _message_fv(struct LogCtx logCtx, const char *fmt, va_list ap);
 void _message_f(struct LogCtx logCtx, const char *fmt, ...);

@@ -19,6 +19,11 @@ void message_write_f(const char *fmt, ...)
         va_end(ap);
 }
 
+void message_write(const char *data, int length)
+{
+        fwrite(data, length, 1, stderr);
+}
+
 void message_end(void)
 {
         fprintf(stderr, "\n");
