@@ -58,6 +58,7 @@ static struct {
         { '-', TOKEN_MINUS },
         { '/', TOKEN_SLASH },
         { '*', TOKEN_STAR },
+        { '=', TOKEN_EQUALS },
 };
 
 static int look_token(struct Ctx *ctx)
@@ -457,19 +458,11 @@ void parse(struct Ctx *ctx)
         }
 }
 
-void setup_ctx(struct Ctx *ctx)
+void setup_ctx(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize)
 {
-        static char contents[] =
-                "uniform vec4 test;\n"
-                "void main(float x, float y, float w)\n"
-                "{\n"
-                "    if (a + 3)\n"
-                "    discard;\n"
-                "}\n";
-
-        ctx->filepath = "TEST";
-        ctx->fileContents = contents;
-        ctx->fileSize = sizeof contents - 1;
+        ctx->filepath = filepath;
+        ctx->fileContents = fileContents;
+        ctx->fileSize = fileSize;
 
         ctx->cursorPos = 0;
         ctx->savedCharacter = -1;

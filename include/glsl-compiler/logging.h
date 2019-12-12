@@ -1,13 +1,14 @@
 #ifndef GLSLCOMPILER_LOGGING_H_INCLUDED
 #define GLSLCOMPILER_LOGGING_H_INCLUDED
 
+#include <glsl-compiler/defs.h>
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #define ENSURE(x) do { if (!(x)) internalerror_f("Assertion failed: %s", #x); } while (0)
-#define NORETURN __attribute__((noreturn))
 
 
 struct LogCtx {

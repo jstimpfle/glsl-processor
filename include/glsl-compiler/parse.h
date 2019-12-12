@@ -27,8 +27,8 @@ enum {
 };
 
 struct Ctx {
-        char *filepath;
-        char *fileContents;
+        const char *filepath;
+        const char *fileContents;
         int fileSize;
         int cursorPos;
         int savedCharacter;
@@ -43,7 +43,7 @@ struct Ctx {
         int tokenBufferCapacity;
 };
 
-void setup_ctx(struct Ctx *ctx);
+void setup_ctx(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize);
 void teardown_ctx(struct Ctx *ctx);
 
 void parse(struct Ctx *ctx);
