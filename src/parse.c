@@ -1,6 +1,6 @@
 #include <glsl-compiler/defs.h>
+#include <glsl-compiler/ast.h>
 #include <glsl-compiler/parse.h>
-#include <glsl-compiler/syntax.h>
 #include <glsl-compiler/memoryalloc.h>
 #include <glsl-compiler/logging.h>
 
@@ -233,16 +233,6 @@ void _expect_name(struct LogCtx logCtx, struct Ctx *ctx)
 
 #define expect_name(ctx) _expect_name(MAKE_LOGCTX(), (ctx))
 
-const char *const builtinTypes[] = {
-        "float",
-        "vec2",
-        "vec3",
-        "vec4",
-        "mat2",
-        "mat3",
-        "mat4",
-};
-
 static int look_simple_token(struct Ctx *ctx, int tokenKind)
 {
         return look_token(ctx) && ctx->tokenKind == tokenKind;
@@ -267,68 +257,76 @@ static void parse_semicolon(struct Ctx *ctx)
         parse_simple_token(ctx, TOKEN_SEMICOLON);
 }
 
-void parse_type(struct Ctx *ctx)
+struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
 {
         expect_name(ctx);
-        for (int i = 0; i < LENGTH(builtinTypes); i++) {
-                if (is_keyword(ctx, builtinTypes[i])) {
+        for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++) {
+                if (is_keyword(ctx, primtypeInfo[i].name)) {
                         consume_token(ctx);
-                        message_f("parsed type %s", builtinTypes[i]);
-                        return;
+                        message_f("parsed type %s", primtypeInfo[i].name);
+                        struct TypeExpr *typeExpr = create_typeexpr(ctx->ast);
+                        typeExpr->primtypeKind = i;
+                        return typeExpr;
                 }
         }
         fatal_parse_error_f(ctx, "type expected, but found '%s'",
                             ctx->tokenBuffer);
 }
 
-void parse_type_or_void(struct Ctx *ctx)
+struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
 {
         expect_name(ctx);
         if (is_keyword(ctx, "void")) {
                 consume_token(ctx);
-                return;
+                struct TypeExpr *typeExpr = create_typeexpr(ctx->ast);
+                typeExpr->primtypeKind = -1;
+                return typeExpr;
         }
-        parse_type(ctx);
+        return parse_typeexpr(ctx);
 }
 
-static void parse_name(struct Ctx *ctx)
+static AstName parse_name(struct Ctx *ctx)
 {
         if (!look_token(ctx) || ctx->tokenKind != TOKEN_NAME)
                 fatal_parse_error_f(ctx, "a name was expected");
         message_f("name is '%s'", ctx->tokenBuffer);
+        AstName name = create_astname(ctx->ast, ctx->tokenBuffer);
         consume_token(ctx);
+        return name;
 }
 
-static void parse_inbound_varying(struct Ctx *ctx)
+static struct AttributeDecl *parse_varying(struct Ctx *ctx, int inOrOut)
 {
-        consume_token(ctx); // "in"
-        parse_type(ctx);
-        parse_name(ctx);
+        consume_token(ctx); // "in" or "out"
+        struct TypeExpr *typeExpr = parse_typeexpr(ctx);
+        AstName name = parse_name(ctx);
         parse_semicolon(ctx);
+        struct AttributeDecl *attributeDecl = create_attributedecl(ctx->ast);
+        attributeDecl->inOrOut = inOrOut;
+        attributeDecl->name = name;
+        attributeDecl->typeExpr = typeExpr;
+        return attributeDecl;
 }
 
-static void parse_outbound_varying(struct Ctx *ctx)
+static struct UniformDecl *parse_uniform(struct Ctx *ctx)
 {
-        consume_token(ctx); // "out"
-        parse_type(ctx);
-        parse_name(ctx);
-        parse_semicolon(ctx);
-}
-
-static void parse_uniform(struct Ctx *ctx)
-{
-        message_f("Uniform!");
         consume_token(ctx); // uniform
         int startPosition = ctx->cursorPos;
-        parse_type(ctx);
-        parse_name(ctx);
+        struct TypeExpr *typeExpr = parse_typeexpr(ctx);
+        AstName name = parse_name(ctx);
         parse_semicolon(ctx);
         int endPosition = ctx->cursorPos;
+        /*
         message_begin();
         message_write_f("uniform ");
         message_write(ctx->fileContents + startPosition,
                       endPosition - startPosition);
         message_end();
+        */
+        struct UniformDecl *uniformDecl = create_uniformdecl(ctx->ast);
+        uniformDecl->uniDeclName = name;
+        uniformDecl->uniDeclTypeExpr = typeExpr;
+        return uniformDecl;
 }
 
 static void parse_expression(struct Ctx *ctx)
@@ -403,17 +401,23 @@ static void parse_stmt(struct Ctx *ctx)
                 parse_expression_stmt(ctx);
 }
 
-static void parse_function(struct Ctx *ctx)
+static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
 {
         int startCursorPos = ctx->cursorPos - ctx->tokenBufferLength - 1; // hack
         message_f("Function!", ctx->tokenBufferLength);
-        parse_type_or_void(ctx);
-        parse_name(ctx);
+        struct TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
+        AstName name = parse_name(ctx);
         parse_simple_token(ctx, TOKEN_LEFTPAREN);
+        int numArgs = 0;
+        AstName *argNames = NULL;
+        struct TypeExpr **argTypeExprs = NULL;
         if (!look_simple_token(ctx, TOKEN_RIGHTPAREN)) {
                 for (;;) {
-                        parse_type(ctx);
-                        parse_name(ctx);
+                        numArgs++;
+                        REALLOC_MEMORY(&argTypeExprs, numArgs);
+                        REALLOC_MEMORY(&argNames, numArgs);
+                        argTypeExprs[numArgs - 1] = parse_typeexpr(ctx);
+                        argNames[numArgs - 1] = parse_name(ctx);
                         if (!look_simple_token(ctx, TOKEN_COMMA))
                                 break;
                         consume_token(ctx);
@@ -424,6 +428,15 @@ static void parse_function(struct Ctx *ctx)
         if (look_simple_token(ctx, TOKEN_SEMICOLON)) {
                 // it's only a decl
                 consume_token(ctx);
+                struct FuncDecl *funcDecl = create_funcdecl(ctx->ast);
+                funcDecl->name = name;
+                funcDecl->returnTypeExpr = returnTypeExpr;
+                funcDecl->argTypeExprs = argTypeExprs;
+                funcDecl->argNames = argNames;
+                funcDecl->numArgs = numArgs;
+                struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
+                node->directiveKind = DIRECTIVE_FUNCDECL;
+                node->data.tFuncdecl = funcDecl;
         }
         else {
                 // HACK: try two write out prototype without much fuss
@@ -444,14 +457,24 @@ static void parse_function(struct Ctx *ctx)
 void parse(struct Ctx *ctx)
 {
         while (look_token(ctx)) {
-                if (is_keyword(ctx, "uniform"))
-                        parse_uniform(ctx);
-                else if (is_keyword(ctx, "in"))
-                        parse_inbound_varying(ctx);
-                else if (is_keyword(ctx, "out"))
-                        parse_outbound_varying(ctx);
-                else if (ctx->tokenKind == TOKEN_NAME)
-                        parse_function(ctx);
+                if (is_keyword(ctx, "uniform")) {
+                        struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
+                        node->directiveKind = DIRECTIVE_UNIFORM;
+                        node->data.tUniform = parse_uniform(ctx);
+                }
+                else if (is_keyword(ctx, "in")) {
+                        struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
+                        node->directiveKind = DIRECTIVE_ATTRIBUTE;
+                        node->data.tAttribute = parse_varying(ctx, 0);
+                }
+                else if (is_keyword(ctx, "out")) {
+                        struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
+                        node->directiveKind = DIRECTIVE_ATTRIBUTE;
+                        node->data.tAttribute = parse_varying(ctx, 1);
+                }
+                else if (ctx->tokenKind == TOKEN_NAME) {
+                        parse_FuncDefn_or_FuncDecl(ctx);                        
+                }
                 else
                         message_f("Unexpected token type %s!",
                                   tokenKindString[ctx->tokenKind]);
@@ -460,6 +483,9 @@ void parse(struct Ctx *ctx)
 
 void setup_ctx(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize)
 {
+        ALLOC_MEMORY(&ctx->ast, 1);
+        memset(ctx->ast, 0, sizeof *ctx->ast);
+
         ctx->filepath = filepath;
         ctx->fileContents = fileContents;
         ctx->fileSize = fileSize;

@@ -1,10 +1,10 @@
 #undef DATA
 #define DATA
+#include <glsl-compiler/ast.h>
 #include <glsl-compiler/parse.h>
-#include <glsl-compiler/syntax.h>
 
-#define LENGTH(a) ((int)(sizeof (a) / sizeof (a)[0]))
 #define ENUM_KIND_STRING(x) [x] = #x
+#define ENUM_TO_STRING(x, s) [x] = s
 
 const char *const tokenKindString[NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_EOF ),
@@ -61,3 +61,14 @@ const struct BinopTokenInfo binopTokenInfo[] = {
 };
 
 const int numBinopTokens = LENGTH(binopTokenInfo);
+
+
+const struct PrimtypeInfo primtypeInfo[NUM_PRIMTYPE_KINDS] = {
+        ENUM_TO_STRING( PRIMTYPE_FLOAT, "float" ),
+        ENUM_TO_STRING( PRIMTYPE_VEC2, "vec2" ),
+        ENUM_TO_STRING( PRIMTYPE_VEC3, "vec3" ),
+        ENUM_TO_STRING( PRIMTYPE_VEC4, "vec4" ),
+        ENUM_TO_STRING( PRIMTYPE_MAT2, "mat2" ),
+        ENUM_TO_STRING( PRIMTYPE_MAT3, "mat3" ),
+        ENUM_TO_STRING( PRIMTYPE_MAT4, "mat4" ),
+};

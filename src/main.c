@@ -1,7 +1,8 @@
-#include <glsl-compiler/logging.h>
-#include <glsl-compiler/syntax.h>
 #include <glsl-compiler/memoryalloc.h>
+#include <glsl-compiler/logging.h>
+#include <glsl-compiler/ast.h>
 #include <glsl-compiler/parse.h>
+#include <glsl-compiler/process.h>
 #include <stdio.h>
 
 int main(int argc, const char **argv)
@@ -31,6 +32,9 @@ int main(int argc, const char **argv)
         struct Ctx ctx;
         setup_ctx(&ctx, filepath, fileContents, fileSize);
         parse(&ctx);
+
+        process_ast(ctx.ast);
+
         teardown_ctx(&ctx);
         return 0;
 }

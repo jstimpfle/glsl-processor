@@ -1,32 +1,9 @@
 #ifndef GLSLCOMPILER_PARSE_H_INCLUDED
 #define GLSLCOMPILER_PARSE_H_INCLUDED
 
-enum {
-        TOKEN_EOF,
-        TOKEN_LITERAL,
-        TOKEN_NAME,
-        TOKEN_STRING,
-        TOKEN_LEFTPAREN,
-        TOKEN_RIGHTPAREN,
-        TOKEN_LEFTBRACE,
-        TOKEN_RIGHTBRACE,
-        TOKEN_COMMA,
-        TOKEN_SEMICOLON,
-        TOKEN_PLUS,
-        TOKEN_MINUS,
-        TOKEN_SLASH,
-        TOKEN_STAR,
-        TOKEN_EQUALS,
-        TOKEN_DOUBLEEQUALS,
-        TOKEN_NE,
-        TOKEN_LT,
-        TOKEN_LE,
-        TOKEN_GE,
-        TOKEN_GT,
-        NUM_TOKEN_KINDS
-};
-
 struct Ctx {
+        struct Ast *ast; // This Ctx is all about creating this AST...
+
         const char *filepath;
         const char *fileContents;
         int fileSize;
