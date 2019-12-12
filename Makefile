@@ -6,9 +6,11 @@ CFLAGS += -Iinclude
 CFLAGS += -DDATA=extern
 
 CFILES =
+CFILES += src/ast.c
 CFILES += src/backtrace_linux.c
 CFILES += src/data.c
 CFILES += src/parse.c
+CFILES += src/process.c
 CFILES += src/logging.c
 CFILES += src/main.c
 CFILES += src/memoryalloc.c

@@ -3,8 +3,11 @@
 
 #if defined(_MSC_VER)
 #define NORETURN _declspec(noreturn)
-#elif defined(_GNUC)
+#elif defined(__GNUC__)
 #define NORETURN __attribute__((noreturn))
+#else
+#warning Compiler unknown, so defining NORETURN as empty
+#define NORETURN
 #endif
 
 #define UNUSED(x) ((void)(x))
