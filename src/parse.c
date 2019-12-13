@@ -4,7 +4,7 @@
 #include <glsl-compiler/memoryalloc.h>
 #include <glsl-compiler/logging.h>
 
-void compute_line_and_column(struct Ctx *ctx, int *outLine, int *outColumn)
+static void compute_line_and_column(struct Ctx *ctx, int *outLine, int *outColumn)
 {
         int line = 1;
         int column = 1;

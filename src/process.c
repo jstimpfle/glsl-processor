@@ -14,7 +14,7 @@ static void print_type(struct Ast *ast, struct TypeExpr *typeExpr)
 void process_ast(struct Ast *ast)
 {
         for (int i = 0; i < ast->numFiles; i++) {
-                struct FileAst *fa = &ast->fileAsts[i];
+                struct ShaderfileAst *fa = &ast->shaderfileAsts[i];
                 for (int j = 0; j < fa->numToplevelNodes; j++) {
                         struct ToplevelNode *node = fa->toplevelNodes[j];
                         if (node->directiveKind == DIRECTIVE_UNIFORM) {

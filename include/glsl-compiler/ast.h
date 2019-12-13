@@ -195,7 +195,7 @@ struct BinopTokenInfo {
         int binopKind;
 };
 
-struct FileAst {
+struct ShaderfileAst {
         char *filepath;
 
         // For now, for simplicity and pointer stability, an array of pointers...
@@ -203,8 +203,31 @@ struct FileAst {
         int numToplevelNodes;
 };
 
+struct ProgramDecl {
+        AstName programName;
+};
+
+struct ShaderDecl {
+        AstName shaderName;
+        int shaderType;  //SHADERTYPE_??
+        AstName shaderFilepath;
+};
+
+struct LinkItem {
+        AstName programName;
+        AstName shaderName;
+};
+
 struct Ast {
-        struct FileAst *fileAsts;
+        struct ProgramDecl *programDecls;
+        struct ShaderDecl *shaderDecls;
+        struct LinkItem *linkItems;
+
+        int numPrograms;
+        int numShaders;
+        int numLinkItems;
+
+        struct ShaderfileAst *shaderfileAsts;
         int numFiles;
         int currentFileIndex;  // global state for simpler code
 
@@ -230,8 +253,13 @@ struct AttributeDecl *create_attributedecl(struct Ast *ast);
 struct FuncDecl *create_funcdecl(struct Ast *ast);
 struct FuncDefn *create_funcdefn(struct Ast *ast);
 
-struct ToplevelNode *add_new_toplevel_node_to_fileast(struct FileAst *fileAst);
+struct ToplevelNode *add_new_toplevel_node_to_fileast(struct ShaderfileAst *fileAst);
 struct ToplevelNode *add_new_toplevel_node(struct Ast *ast);
+
+struct ProgramDecl *create_program_decl(struct Ast *ast);
+struct ShaderDecl *create_shader_decl(struct Ast *ast);
+struct LinkItem *create_link_item(struct Ast *ast);
+
 void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath);
 
 void setup_ast(struct Ast *ast);

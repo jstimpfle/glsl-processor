@@ -44,6 +44,7 @@ void NORETURN _internalerror_f(struct LogCtx logCtx, const char *fmt, ...);
 #define message_fv(fmt, ap) _message_fv(MAKE_LOGCTX(), (fmt), (ap))
 #define message_f(fmt, ...) _message_f(MAKE_LOGCTX(), (fmt), ##__VA_ARGS__)
 #define message_s(msg) _message_s(MAKE_LOGCTX(), (msg))
+#define fatal_begin() _fatal_begin(MAKE_LOGCTX())
 #define fatal_fv(fmt, ap) _fatal_fv(MAKE_LOGCTX(), (fmt), (ap))
 #define fatal_f(fmt, ...) _fatal_f(MAKE_LOGCTX(), (fmt), ##__VA_ARGS__)
 #define internalerror_fv(fmt, ap) _internalerror_fv(MAKE_LOGCTX(), (fmt), (ap))
