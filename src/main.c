@@ -5,33 +5,35 @@
 #include <glsl-compiler/process.h>
 #include <stdio.h>
 
-int main(int argc, const char **argv)
+void parse_file(struct Ctx *ctx, const char *filepath)
 {
-        if (argc != 2) {
-                message_f("Usage: %s <path-to-shader>", argv[0]);
-                return 1;
-        }
-
-        const char *filepath = argv[1];
-
         char *fileContents = NULL;
         int fileSize;
         FILE *fileHandle = fopen(filepath, "rb");
         fseek(fileHandle, 0, SEEK_END);
         fileSize = ftell(fileHandle);
-        message_f("File size is %d bytes");
+        message_f("File size is %d bytes", fileSize);
         fseek(fileHandle, 0, SEEK_SET);
         ALLOC_MEMORY(&fileContents, fileSize + 1);
         int r = fread(fileContents, fileSize, 1, fileHandle);
-        if (r != 1) {
-                message_f("Error reading file %s", filepath);
-                return 1;
-        }
+        if (r != 1)
+                fatal_f("Error reading file %s", filepath);
         fclose(fileHandle);
 
+        parse_next_file(ctx, filepath, fileContents, fileSize);
+}
+
+int main(int argc, const char **argv)
+{
+        if (argc < 2) {
+                message_f("Usage: %s <shader-file> <shader-file>...", argv[0]);
+                return 1;
+        }
         struct Ctx ctx;
-        setup_ctx(&ctx, filepath, fileContents, fileSize);
-        parse(&ctx);
+        setup_ctx(&ctx);
+
+        for (int i = 1; i < argc; i++)
+                parse_file(&ctx, argv[i]);
 
         process_ast(ctx.ast);
 

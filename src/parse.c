@@ -89,7 +89,7 @@ static void append_to_tokenbuffer(struct Ctx *ctx, int character)
         ctx->tokenBuffer[pos + 1] = '\0';
 }
 
-static struct {
+static const struct {
         int character;
         int tokenKind;
 } tokInfo1[] = {
@@ -106,7 +106,7 @@ static struct {
         { '*', TOKEN_STAR },
 };
 
-static struct {
+static const struct {
         int character1;
         int character2;
         int tokenKind1;
@@ -302,25 +302,22 @@ int is_binop_token(struct Ctx *ctx, int *binopKind)
         return 0;
 }
 
-void _expect_name(struct LogCtx logCtx, struct Ctx *ctx)
-{
-        if (!look_token(ctx) || ctx->tokenKind != TOKEN_NAME)
-                _fatal_parse_error_f(logCtx, ctx, "expected name token");
-}
-
-#define expect_name(ctx) _expect_name(MAKE_LOGCTX(), (ctx))
-
-static int look_simple_token(struct Ctx *ctx, int tokenKind)
+static int look_token_kind(struct Ctx *ctx, int tokenKind)
 {
         return look_token(ctx) && ctx->tokenKind == tokenKind;
 }
 
-static void parse_simple_token(struct Ctx *ctx, int tokenKind)
+static int expect_token_kind(struct Ctx *ctx, int tokenKind)
 {
-        if (!look_token(ctx) || ctx->tokenKind != tokenKind)
-                fatal_parse_error_f(ctx, "Expected %s token, got: %s",
+        if (!look_token_kind(ctx, tokenKind))
+                fatal_parse_error_f(ctx, "expected '%s' token, found: '%s'",
                                     tokenKindString[tokenKind],
                                     tokenKindString[ctx->tokenKind]);
+}
+
+static void parse_simple_token(struct Ctx *ctx, int tokenKind)
+{
+        expect_token_kind(ctx, tokenKind);
         consume_token(ctx);
 }
 
@@ -336,7 +333,7 @@ static void parse_semicolon(struct Ctx *ctx)
 
 struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
 {
-        expect_name(ctx);
+        expect_token_kind(ctx, TOKEN_NAME);
         for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++) {
                 if (is_keyword(ctx, primtypeInfo[i].name)) {
                         consume_token(ctx);
@@ -352,7 +349,7 @@ struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
 
 struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
 {
-        expect_name(ctx);
+        expect_token_kind(ctx, TOKEN_NAME);
         if (is_keyword(ctx, "void")) {
                 consume_token(ctx);
                 struct TypeExpr *typeExpr = create_typeexpr(ctx->ast);
@@ -364,8 +361,7 @@ struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
 
 static AstName parse_name(struct Ctx *ctx)
 {
-        if (!look_token(ctx) || ctx->tokenKind != TOKEN_NAME)
-                fatal_parse_error_f(ctx, "a name was expected");
+        expect_token_kind(ctx, TOKEN_NAME);
         message_f("name is '%s'", ctx->tokenBuffer);
         AstName name = create_astname(ctx->ast, ctx->tokenBuffer);
         consume_token(ctx);
@@ -387,19 +383,10 @@ static struct AttributeDecl *parse_varying(struct Ctx *ctx, int inOrOut)
 
 static struct UniformDecl *parse_uniform(struct Ctx *ctx)
 {
-        consume_token(ctx); // uniform
-        int startPosition = ctx->cursorPos;
+        consume_token(ctx); // "uniform"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
         AstName name = parse_name(ctx);
         parse_semicolon(ctx);
-        int endPosition = ctx->cursorPos;
-        /*
-        message_begin();
-        message_write_f("uniform ");
-        message_write(ctx->fileContents + startPosition,
-                      endPosition - startPosition);
-        message_end();
-        */
         struct UniformDecl *uniformDecl = create_uniformdecl(ctx->ast);
         uniformDecl->uniDeclName = name;
         uniformDecl->uniDeclTypeExpr = typeExpr;
@@ -421,14 +408,17 @@ static void parse_expression(struct Ctx *ctx)
                 parse_expression(ctx);
                 parse_simple_token(ctx, TOKEN_RIGHTPAREN);
         }
+        else {
+                fatal_parse_error_f(ctx, "Expected expression");
+        }
         for (;;) {
                 // function call?
-                if (look_simple_token(ctx, TOKEN_LEFTPAREN)) {
+                if (look_token_kind(ctx, TOKEN_LEFTPAREN)) {
                         consume_token(ctx);
-                        if (!look_simple_token(ctx, TOKEN_RIGHTPAREN)) {
+                        if (!look_token_kind(ctx, TOKEN_RIGHTPAREN)) {
                                 for (;;) {
                                         parse_expression(ctx);
-                                        if (!look_simple_token(ctx, TOKEN_COMMA))
+                                        if (!look_token_kind(ctx, TOKEN_COMMA))
                                                 break;
                                         consume_token(ctx);
                                 }
@@ -436,7 +426,7 @@ static void parse_expression(struct Ctx *ctx)
                         parse_simple_token(ctx, TOKEN_RIGHTPAREN);
                 }
                 // member descend?
-                else if (look_simple_token(ctx, TOKEN_DOT)) {
+                else if (look_token_kind(ctx, TOKEN_DOT)) {
                         consume_token(ctx);
                         parse_name(ctx);
                 }
@@ -458,7 +448,7 @@ static void parse_stmt(struct Ctx *ctx); // forward declare: recursion
 static void parse_compound_stmt(struct Ctx *ctx)
 {
         parse_simple_token(ctx, TOKEN_LEFTBRACE);
-        while (!look_simple_token(ctx, TOKEN_RIGHTBRACE))
+        while (!look_token_kind(ctx, TOKEN_RIGHTBRACE))
                 parse_stmt(ctx);
         parse_simple_token(ctx, TOKEN_RIGHTBRACE);
 }
@@ -467,7 +457,7 @@ static void parse_variable_declaration_stmt(struct Ctx *ctx)
 {
         parse_typeexpr(ctx);
         parse_name(ctx);
-        if (look_simple_token(ctx, TOKEN_EQUALS)) {
+        if (look_token_kind(ctx, TOKEN_EQUALS)) {
                 consume_token(ctx);
                 parse_expression(ctx);
                 parse_semicolon(ctx);
@@ -481,7 +471,7 @@ static void parse_if_stmt(struct Ctx *ctx)
         parse_expression(ctx);
         parse_simple_token(ctx, TOKEN_RIGHTPAREN);
         parse_stmt(ctx);
-        if (look_simple_token(ctx, TOKEN_NAME) && is_keyword(ctx, "else")) {
+        if (look_token_kind(ctx, TOKEN_NAME) && is_keyword(ctx, "else")) {
                 consume_token(ctx); // "if"
                 parse_stmt(ctx);
         }
@@ -526,7 +516,6 @@ static void parse_stmt(struct Ctx *ctx)
 
 static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
 {
-        int startCursorPos = ctx->cursorPos - ctx->tokenBufferLength - 1; // hack
         message_f("Function!", ctx->tokenBufferLength);
         struct TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
         AstName name = parse_name(ctx);
@@ -534,21 +523,20 @@ static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
         int numArgs = 0;
         AstName *argNames = NULL;
         struct TypeExpr **argTypeExprs = NULL;
-        if (!look_simple_token(ctx, TOKEN_RIGHTPAREN)) {
+        if (!look_token_kind(ctx, TOKEN_RIGHTPAREN)) {
                 for (;;) {
                         numArgs++;
                         REALLOC_MEMORY(&argTypeExprs, numArgs);
                         REALLOC_MEMORY(&argNames, numArgs);
                         argTypeExprs[numArgs - 1] = parse_typeexpr(ctx);
                         argNames[numArgs - 1] = parse_name(ctx);
-                        if (!look_simple_token(ctx, TOKEN_COMMA))
+                        if (!look_token_kind(ctx, TOKEN_COMMA))
                                 break;
                         consume_token(ctx);
                 }
         }
         parse_simple_token(ctx, TOKEN_RIGHTPAREN);
-        int endCursorPos = ctx->cursorPos;
-        if (look_simple_token(ctx, TOKEN_SEMICOLON)) {
+        if (look_token_kind(ctx, TOKEN_SEMICOLON)) {
                 // it's only a decl
                 consume_token(ctx);
                 struct FuncDecl *funcDecl = create_funcdecl(ctx->ast);
@@ -562,22 +550,26 @@ static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
                 node->data.tFuncdecl = funcDecl;
         }
         else {
-                // HACK: try two write out prototype without much fuss
-                message_begin();
-                message_write_f("FUNCTION ");
-                message_write(ctx->fileContents + startCursorPos,
-                              endCursorPos - startCursorPos);
-                message_write_f(";");
-                message_end();
-
                 parse_simple_token(ctx, TOKEN_LEFTBRACE);
-                while (!look_simple_token(ctx, TOKEN_RIGHTBRACE))
+                while (!look_token_kind(ctx, TOKEN_RIGHTBRACE))
                         parse_stmt(ctx);
                 parse_simple_token(ctx, TOKEN_RIGHTBRACE);
+
+                struct FuncDefn *funcDefn = create_funcdefn(ctx->ast);
+                funcDefn->name = name;
+                funcDefn->returnTypeExpr = returnTypeExpr;
+                funcDefn->argTypeExprs = argTypeExprs;
+                funcDefn->argNames = argNames;
+                funcDefn->numArgs = numArgs;
+                struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
+                node->directiveKind = DIRECTIVE_FUNCDEFN;
+                node->data.tFuncdefn = funcDefn;
+                /*
+                */
         }
 }
 
-void parse(struct Ctx *ctx)
+static void parse(struct Ctx *ctx)
 {
         while (look_token(ctx)) {
                 if (is_keyword(ctx, "uniform")) {
@@ -596,7 +588,7 @@ void parse(struct Ctx *ctx)
                         node->data.tAttribute = parse_varying(ctx, 1);
                 }
                 else if (ctx->tokenKind == TOKEN_NAME) {
-                        parse_FuncDefn_or_FuncDecl(ctx);                        
+                        parse_FuncDefn_or_FuncDecl(ctx);
                 }
                 else
                         message_f("Unexpected token type %s!",
@@ -604,11 +596,8 @@ void parse(struct Ctx *ctx)
         }
 }
 
-void setup_ctx(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize)
+void parse_next_file(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize)
 {
-        ALLOC_MEMORY(&ctx->ast, 1);
-        memset(ctx->ast, 0, sizeof *ctx->ast);
-
         ctx->filepath = filepath;
         ctx->fileContents = fileContents;
         ctx->fileSize = fileSize;
@@ -622,9 +611,20 @@ void setup_ctx(struct Ctx *ctx, const char *filepath, const char *fileContents, 
         ctx->tokenBuffer = NULL;
         ctx->tokenBufferLength = 0;
         ctx->tokenBufferCapacity = 0;
+
+        add_file_to_ast_and_switch_to_it(ctx->ast, filepath);
+        parse(ctx);
+}
+
+void setup_ctx(struct Ctx *ctx)
+{
+        memset(ctx, 0, sizeof *ctx);
+        ALLOC_MEMORY(&ctx->ast, 1);
+        setup_ast(ctx->ast);
 }
 
 void teardown_ctx(struct Ctx *ctx)
 {
+        teardown_ast(ctx->ast);
         FREE_MEMORY(&ctx->tokenBuffer);
 }

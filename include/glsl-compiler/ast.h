@@ -173,7 +173,7 @@ enum {
         DIRECTIVE_UNIFORM,
         DIRECTIVE_ATTRIBUTE,
         DIRECTIVE_FUNCDECL,
-        DIRECTIVE_FUNCDEF,
+        DIRECTIVE_FUNCDEFN,
 };
 
 struct ToplevelNode {
@@ -182,7 +182,7 @@ struct ToplevelNode {
                 struct UniformDecl *tUniform;
                 struct AttributeDecl *tAttribute;
                 struct FuncDecl *tFuncdecl;
-                struct FuncDefn *tFuncdef;
+                struct FuncDefn *tFuncdefn;
         } data;
 };
 
@@ -195,18 +195,24 @@ struct BinopTokenInfo {
         int binopKind;
 };
 
-struct Ast {
+struct FileAst {
         char *filepath;
+
+        // For now, for simplicity and pointer stability, an array of pointers...
+        struct ToplevelNode **toplevelNodes;
+        int numToplevelNodes;
+};
+
+struct Ast {
+        struct FileAst *fileAsts;
+        int numFiles;
+        int currentFileIndex;  // global state for simpler code
 
         // TODO: think about allocation strategy...
         struct AstName *astStrings;
         struct UniformNode *uniforms;
         struct AttributeNode *attributes;
         struct FuncDeclNode *funcDecls;
-
-        // For now, for simplicity and pointer stability, an array of pointers...
-        struct ToplevelNode **toplevelNodes;        
-        int numToplevelNodes;
 };
 
 
@@ -222,8 +228,14 @@ struct TypeExpr *create_typeexpr(struct Ast *ast);
 struct UniformDecl *create_uniformdecl(struct Ast *ast);
 struct AttributeDecl *create_attributedecl(struct Ast *ast);
 struct FuncDecl *create_funcdecl(struct Ast *ast);
+struct FuncDefn *create_funcdefn(struct Ast *ast);
 
+struct ToplevelNode *add_new_toplevel_node_to_fileast(struct FileAst *fileAst);
 struct ToplevelNode *add_new_toplevel_node(struct Ast *ast);
+void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath);
+
+void setup_ast(struct Ast *ast);
+void teardown_ast(struct Ast *ast);
 
 static inline const char *get_astname_buffer(struct Ast *ast, AstName name)
 {

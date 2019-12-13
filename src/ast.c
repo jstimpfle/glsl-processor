@@ -45,13 +45,47 @@ DEFINE_ALLOCATOR_FUNCTION(struct AttributeDecl, create_attributedecl, POOL_ATTRI
 DEFINE_ALLOCATOR_FUNCTION(struct FuncDecl, create_funcdecl, POOL_FUNCDECL)
 DEFINE_ALLOCATOR_FUNCTION(struct FuncDefn, create_funcdefn, POOL_FUNCDEFN)
 
-struct ToplevelNode *add_new_toplevel_node(struct Ast *ast)
+struct ToplevelNode *add_new_toplevel_node_to_fileast(struct FileAst *fa)
 {
-        ++ast->numToplevelNodes;
-        REALLOC_MEMORY(&ast->toplevelNodes, ast->numToplevelNodes);
+        ++fa->numToplevelNodes;
+        REALLOC_MEMORY(&fa->toplevelNodes, fa->numToplevelNodes);
 
         struct ToplevelNode *toplevelNode;
         ALLOC_MEMORY(&toplevelNode, 1);
-        ast->toplevelNodes[ast->numToplevelNodes - 1] = toplevelNode;
+        fa->toplevelNodes[fa->numToplevelNodes - 1] = toplevelNode;
         return toplevelNode;
+}
+
+struct ToplevelNode *add_new_toplevel_node(struct Ast *ast)
+{
+        add_new_toplevel_node_to_fileast(&ast->fileAsts[ast->currentFileIndex]);
+}
+
+void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath)
+{
+        int index = ast->numFiles ++;
+        REALLOC_MEMORY(&ast->fileAsts, ast->numFiles);
+        struct FileAst *fa = &ast->fileAsts[index];
+        memset(fa, 0, sizeof *fa);
+        int filepathLength = strlen(filepath);
+        ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
+        memcpy(fa->filepath, filepath, filepathLength + 1);
+        // switch
+        ast->currentFileIndex = index;
+}
+
+void setup_ast(struct Ast *ast)
+{
+        memset(ast, 0, sizeof *ast);
+}
+
+void teardown_ast(struct Ast *ast)
+{
+        for (int i = 0; i < ast->numFiles; i++)
+                FREE_MEMORY(&ast->fileAsts[i].filepath);
+        FREE_MEMORY(&ast->fileAsts);
+        FREE_MEMORY(&ast->astStrings);
+        FREE_MEMORY(&ast->uniforms);
+        FREE_MEMORY(&ast->attributes);
+        FREE_MEMORY(&ast->funcDecls);
 }
