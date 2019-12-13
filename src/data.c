@@ -28,6 +28,10 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_LE ),
         ENUM_KIND_STRING( TOKEN_GE ),
         ENUM_KIND_STRING( TOKEN_GT ),
+        ENUM_KIND_STRING( TOKEN_AMPERSAND ),
+        ENUM_KIND_STRING( TOKEN_DOUBLEAMPERSAND ),
+        ENUM_KIND_STRING( TOKEN_PIPE ),
+        ENUM_KIND_STRING( TOKEN_DOUBLEPIPE ),
 };
 
 const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
@@ -43,6 +47,10 @@ const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
         MAKE( BINOP_DIV, "/" ),
         MAKE( BINOP_MUL, "*" ),
         MAKE( BINOP_ASSIGN, "=" ),
+        MAKE( BINOP_BITAND, "&" ),
+        MAKE( BINOP_BITOR, "|" ),
+        MAKE( BINOP_LOGICALAND, "&&" ),
+        MAKE( BINOP_LOGICALOR, "||" ),
 #undef MAKE
 };
 
@@ -58,6 +66,10 @@ const struct BinopTokenInfo binopTokenInfo[] = {
         { TOKEN_LE, BINOP_LE },
         { TOKEN_GE, BINOP_GE },
         { TOKEN_GT, BINOP_GT },
+        { TOKEN_AMPERSAND, BINOP_BITAND },
+        { TOKEN_PIPE, BINOP_BITOR },
+        { TOKEN_DOUBLEAMPERSAND, BINOP_LOGICALAND },
+        { TOKEN_DOUBLEPIPE, BINOP_LOGICALOR },
 };
 
 const int numBinopTokens = LENGTH(binopTokenInfo);

@@ -13,6 +13,7 @@ enum {
         TOKEN_RIGHTPAREN,
         TOKEN_LEFTBRACE,
         TOKEN_RIGHTBRACE,
+        TOKEN_DOT,
         TOKEN_COMMA,
         TOKEN_SEMICOLON,
         TOKEN_PLUS,
@@ -26,6 +27,10 @@ enum {
         TOKEN_LE,
         TOKEN_GE,
         TOKEN_GT,
+        TOKEN_AMPERSAND,
+        TOKEN_DOUBLEAMPERSAND,
+        TOKEN_PIPE,
+        TOKEN_DOUBLEPIPE,
         NUM_TOKEN_KINDS
 };
 
@@ -41,6 +46,10 @@ enum {
         BINOP_MUL,
         BINOP_DIV,
         BINOP_ASSIGN,
+        BINOP_BITAND,
+        BINOP_BITOR,
+        BINOP_LOGICALAND,
+        BINOP_LOGICALOR,
         NUM_BINOP_KINDS,
 };
 

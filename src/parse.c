@@ -4,6 +4,51 @@
 #include <glsl-compiler/memoryalloc.h>
 #include <glsl-compiler/logging.h>
 
+void compute_line_and_column(struct Ctx *ctx, int *outLine, int *outColumn)
+{
+        int line = 1;
+        int column = 1;
+        for (int i = 0; i < ctx->cursorPos; i++) {
+                if (ctx->fileContents[i] == '\n') {
+                        line ++;
+                        column = 0;
+                }
+                else {
+                        column ++;
+                }
+        }
+        *outLine = line;
+        *outColumn = column;
+}
+
+void NORETURN _fatal_parse_error_fv(
+                struct LogCtx logCtx, struct Ctx *ctx, const char *fmt, va_list ap)
+{
+        int line;
+        int column;
+        compute_line_and_column(ctx, &line, &column);
+        _fatal_begin(logCtx);
+        fatal_write_f("while parsing '%s' at %d:%d: ",
+                      ctx->filepath, line, column);
+        fatal_write_fv(fmt, ap);
+        fatal_end();
+}
+
+void NORETURN _fatal_parse_error_f(
+                struct LogCtx logCtx, struct Ctx *ctx, const char *fmt, ...)
+{
+        va_list ap;
+        va_start(ap, fmt);
+        _fatal_parse_error_fv(logCtx, ctx, fmt, ap);
+        va_end(ap);
+}
+
+#define fatal_parse_error_fv(ctx, fmt, ap) \
+        _fatal_parse_error_fv(MAKE_LOGCTX(), (ctx), (fmt), (ap))
+#define fatal_parse_error_f(ctx, fmt, ...) \
+        _fatal_parse_error_f(MAKE_LOGCTX(), (ctx), (fmt), ##__VA_ARGS__)
+
+
 static int look_character(struct Ctx *ctx)
 {
         if (ctx->haveSavedCharacter)
@@ -52,20 +97,34 @@ static struct {
         { ')', TOKEN_RIGHTPAREN },
         { '{', TOKEN_LEFTBRACE },
         { '}', TOKEN_RIGHTBRACE },
+        { '.', TOKEN_DOT },
         { ',', TOKEN_COMMA },
         { ';', TOKEN_SEMICOLON },
         { '+', TOKEN_PLUS },
         { '-', TOKEN_MINUS },
         { '/', TOKEN_SLASH },
         { '*', TOKEN_STAR },
-        { '=', TOKEN_EQUALS },
 };
 
-static int look_token(struct Ctx *ctx)
+static struct {
+        int character1;
+        int character2;
+        int tokenKind1;
+        int tokenKind2;
+} tokInfo2[] = {
+        { '<', '=', TOKEN_LT, TOKEN_LE },
+        { '>', '=', TOKEN_GT, TOKEN_GE },
+        { '=', '=', TOKEN_EQUALS, TOKEN_DOUBLEEQUALS },
+        { '&', '&', TOKEN_AMPERSAND, TOKEN_DOUBLEAMPERSAND },
+        { '|', '|', TOKEN_PIPE, TOKEN_DOUBLEPIPE },
+};
+
+int look_token(struct Ctx *ctx)
 {
         if (ctx->haveSavedToken)
                 return 1;
         int c;
+skipwhitespace:
         for (;;) {
                 c = look_character(ctx);
                 if (c > 32)
@@ -76,7 +135,46 @@ static int look_token(struct Ctx *ctx)
                 }
                 consume_character(ctx);
         }
-        if (('a' <= c && c <= 'z')
+        /* skip comments... */
+        if (c == '/') {
+                consume_character(ctx);
+                c = look_character(ctx);
+                if (c == '*') {
+                        consume_character(ctx);
+                        for (;;) {
+                                c = look_character(ctx);
+                                if (c == -1) {
+                                        fatal_parse_error_f(ctx,
+                        "EOF encountered while expecting end of comment");
+                                }
+                                consume_character(ctx);
+                                if (c == '*' && look_character(ctx) == '/') {
+                                        consume_character(ctx);
+                                        break;
+                                }
+                        }
+                        goto skipwhitespace;
+                }
+                else if (c == '/') {
+                        consume_character(ctx);
+                        for (;;) {
+                                c = look_character(ctx);
+                                if (c == -1) {
+                                        // let's not consider that a failure
+                                        // here... just back out
+                                        goto skipwhitespace;
+                                }
+                                consume_character(ctx);
+                                if (c == '\n') {
+                                        goto skipwhitespace;
+                                }
+                        }
+                }
+                else {
+                        ctx->tokenKind = TOKEN_SLASH;
+                }
+        }
+        else if (('a' <= c && c <= 'z')
             || ('A' <= c && c <= 'Z')
             || (c == '_')) {
                 ctx->tokenKind = TOKEN_NAME;
@@ -147,7 +245,22 @@ static int look_token(struct Ctx *ctx)
                                 goto ok;
                         }
                 }
-                fatal_f("Failed to lex; initial character: '%c'", c);
+                for (int i = 0; i < LENGTH(tokInfo2); i++) {
+                        if (c == tokInfo2[i].character1) {
+                                consume_character(ctx);
+                                if (look_character(ctx)
+                                    == tokInfo2[i].character2) {
+                                        consume_character(ctx);
+                                        ctx->tokenKind = tokInfo2[i].tokenKind2;
+                                }
+                                else {
+                                        ctx->tokenKind = tokInfo2[i].tokenKind1;
+                                }
+                                goto ok;
+                        }
+                }
+                fatal_parse_error_f(ctx,
+                                "Failed to lex; initial character: '%c'", c);
 ok:
                 ;
         }
@@ -169,6 +282,14 @@ int is_keyword(struct Ctx *ctx, const char *keyword)
         return !strcmp(ctx->tokenBuffer, keyword);
 }
 
+int is_known_type_name(struct Ctx *ctx)
+{
+        for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++)
+                if (!strcmp(ctx->tokenBuffer, primtypeInfo[i].name))
+                        return 1;
+        return 0;
+}
+
 int is_binop_token(struct Ctx *ctx, int *binopKind)
 {
         ENSURE(ctx->haveSavedToken);
@@ -180,50 +301,6 @@ int is_binop_token(struct Ctx *ctx, int *binopKind)
         }
         return 0;
 }
-
-void compute_line_and_column(struct Ctx *ctx, int *outLine, int *outColumn)
-{
-        int line = 1;
-        int column = 1;
-        for (int i = 0; i < ctx->cursorPos; i++) {
-                if (ctx->fileContents[i] == '\n') {
-                        line ++;
-                        column = 0;
-                }
-                else {
-                        column ++;
-                }
-        }
-        *outLine = line;
-        *outColumn = column;
-}
-
-void NORETURN _fatal_parse_error_fv(
-                struct LogCtx logCtx, struct Ctx *ctx, const char *fmt, va_list ap)
-{
-        int line;
-        int column;
-        compute_line_and_column(ctx, &line, &column);
-        _fatal_begin(logCtx);
-        fatal_write_f("while parsing '%s' at %d:%d: ",
-                      ctx->filepath, line, column);
-        fatal_write_fv(fmt, ap);
-        fatal_end();
-}
-
-void NORETURN _fatal_parse_error_f(
-                struct LogCtx logCtx, struct Ctx *ctx, const char *fmt, ...)
-{
-        va_list ap;
-        va_start(ap, fmt);
-        _fatal_parse_error_fv(logCtx, ctx, fmt, ap);
-        va_end(ap);
-}
-
-#define fatal_parse_error_fv(ctx, fmt, ap) \
-        _fatal_parse_error_fv(MAKE_LOGCTX(), (ctx), (fmt), (ap))
-#define fatal_parse_error_f(ctx, fmt, ...) \
-        _fatal_parse_error_f(MAKE_LOGCTX(), (ctx), (fmt), ##__VA_ARGS__)
 
 void _expect_name(struct LogCtx logCtx, struct Ctx *ctx)
 {
@@ -344,6 +421,29 @@ static void parse_expression(struct Ctx *ctx)
                 parse_expression(ctx);
                 parse_simple_token(ctx, TOKEN_RIGHTPAREN);
         }
+        for (;;) {
+                // function call?
+                if (look_simple_token(ctx, TOKEN_LEFTPAREN)) {
+                        consume_token(ctx);
+                        if (!look_simple_token(ctx, TOKEN_RIGHTPAREN)) {
+                                for (;;) {
+                                        parse_expression(ctx);
+                                        if (!look_simple_token(ctx, TOKEN_COMMA))
+                                                break;
+                                        consume_token(ctx);
+                                }
+                        }
+                        parse_simple_token(ctx, TOKEN_RIGHTPAREN);
+                }
+                // member descend?
+                else if (look_simple_token(ctx, TOKEN_DOT)) {
+                        consume_token(ctx);
+                        parse_name(ctx);
+                }
+                else {
+                        break;
+                }
+        }
         // binary operators
         int binopKind;
         if (look_token(ctx) && is_binop_token(ctx, &binopKind)) {
@@ -354,6 +454,25 @@ static void parse_expression(struct Ctx *ctx)
 }
 
 static void parse_stmt(struct Ctx *ctx); // forward declare: recursion
+
+static void parse_compound_stmt(struct Ctx *ctx)
+{
+        parse_simple_token(ctx, TOKEN_LEFTBRACE);
+        while (!look_simple_token(ctx, TOKEN_RIGHTBRACE))
+                parse_stmt(ctx);
+        parse_simple_token(ctx, TOKEN_RIGHTBRACE);
+}
+
+static void parse_variable_declaration_stmt(struct Ctx *ctx)
+{
+        parse_typeexpr(ctx);
+        parse_name(ctx);
+        if (look_simple_token(ctx, TOKEN_EQUALS)) {
+                consume_token(ctx);
+                parse_expression(ctx);
+                parse_semicolon(ctx);
+        }
+}
 
 static void parse_if_stmt(struct Ctx *ctx)
 {
@@ -391,7 +510,11 @@ static void parse_stmt(struct Ctx *ctx)
 {
         if (!look_token(ctx))
                 fatal_parse_error_f(ctx, "Expected statement");
-        if (is_keyword(ctx, "if"))
+        if (ctx->tokenKind == TOKEN_LEFTBRACE)
+                parse_compound_stmt(ctx);
+        else if (is_known_type_name(ctx))
+                parse_variable_declaration_stmt(ctx);
+        else if (is_keyword(ctx, "if"))
                 parse_if_stmt(ctx);
         else if (is_keyword(ctx, "return"))
                 parse_return_stmt(ctx);
