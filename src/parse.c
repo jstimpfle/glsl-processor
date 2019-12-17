@@ -359,11 +359,11 @@ struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
         return parse_typeexpr(ctx);
 }
 
-static AstName parse_name(struct Ctx *ctx)
+static AstString parse_name(struct Ctx *ctx)
 {
         expect_token_kind(ctx, TOKEN_NAME);
         message_f("name is '%s'", ctx->tokenBuffer);
-        AstName name = create_astname(ctx->ast, ctx->tokenBuffer);
+        AstString name = create_aststring(ctx->ast, ctx->tokenBuffer);
         consume_token(ctx);
         return name;
 }
@@ -372,7 +372,7 @@ static struct AttributeDecl *parse_varying(struct Ctx *ctx, int inOrOut)
 {
         consume_token(ctx); // "in" or "out"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
-        AstName name = parse_name(ctx);
+        AstString name = parse_name(ctx);
         parse_semicolon(ctx);
         struct AttributeDecl *attributeDecl = create_attributedecl(ctx->ast);
         attributeDecl->inOrOut = inOrOut;
@@ -385,7 +385,7 @@ static struct UniformDecl *parse_uniform(struct Ctx *ctx)
 {
         consume_token(ctx); // "uniform"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
-        AstName name = parse_name(ctx);
+        AstString name = parse_name(ctx);
         parse_semicolon(ctx);
         struct UniformDecl *uniformDecl = create_uniformdecl(ctx->ast);
         uniformDecl->uniDeclName = name;
@@ -518,10 +518,10 @@ static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
 {
         message_f("Function!", ctx->tokenBufferLength);
         struct TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
-        AstName name = parse_name(ctx);
+        AstString name = parse_name(ctx);
         parse_simple_token(ctx, TOKEN_LEFTPAREN);
         int numArgs = 0;
-        AstName *argNames = NULL;
+        AstString *argNames = NULL;
         struct TypeExpr **argTypeExprs = NULL;
         if (!look_token_kind(ctx, TOKEN_RIGHTPAREN)) {
                 for (;;) {

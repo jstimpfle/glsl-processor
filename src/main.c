@@ -61,7 +61,7 @@ int main(int argc, const char **argv)
         }
 
         for (int i = 1; i < ctx.ast->numShaders; i++) {
-                const char *filepath = get_astname_buffer(ctx.ast, ctx.ast->shaderDecls[i].shaderFilepath); //XXX
+                const char *filepath = get_aststring_buffer(ctx.ast, ctx.ast->shaderDecls[i].shaderFilepath); //XXX
                 message_f("filepath is: %s", filepath);
                 parse_file(&ctx, filepath);
         }

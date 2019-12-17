@@ -1,10 +1,10 @@
 #include <glsl-compiler/memoryalloc.h>
 #include <glsl-compiler/ast.h>
 
-AstName create_astname(struct Ast *ast, const char *data)
+AstString create_aststring(struct Ast *ast, const char *data)
 {
         int length = strlen(data);
-        AstName astString;
+        AstString astString;
         ALLOC_MEMORY(&astString.data, length + 1);
         memcpy(astString.data, data, length + 1);
         return astString;

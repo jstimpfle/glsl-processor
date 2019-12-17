@@ -18,18 +18,18 @@ void process_ast(struct Ast *ast)
                 for (int j = 0; j < fa->numToplevelNodes; j++) {
                         struct ToplevelNode *node = fa->toplevelNodes[j];
                         if (node->directiveKind == DIRECTIVE_UNIFORM) {
-                                AstName name = node->data.tUniform->uniDeclName;
+                                AstString name = node->data.tUniform->uniDeclName;
                                 struct TypeExpr *typeExpr = node->data.tUniform->uniDeclTypeExpr;
-                                const char *nameBuffer = get_astname_buffer(ast, name);
+                                const char *nameBuffer = get_aststring_buffer(ast, name);
                                 printf("%s: uniform ", fa->filepath);
                                 print_type(ast, typeExpr);
                                 printf(" %s;\n", nameBuffer);
                         }
                         else if (node->directiveKind == DIRECTIVE_ATTRIBUTE) {
                                 struct AttributeDecl *adecl = node->data.tAttribute;
-                                AstName name = adecl->name;
+                                AstString name = adecl->name;
                                 struct TypeExpr *typeExpr = adecl->typeExpr;
-                                const char *nameBuffer = get_astname_buffer(ast, name);
+                                const char *nameBuffer = get_aststring_buffer(ast, name);
                                 printf("%s: attribute ", fa->filepath);
                                 printf("%s ", adecl->inOrOut ? "out" : "in");
                                 print_type(ast, typeExpr);
@@ -37,17 +37,17 @@ void process_ast(struct Ast *ast)
                         }
                         else if (node->directiveKind == DIRECTIVE_FUNCDECL) {
                                 struct FuncDecl *fdecl = node->data.tFuncdecl;
-                                AstName name = fdecl->name;
+                                AstString name = fdecl->name;
                                 printf("%s: funcdecl ", fa->filepath);
                                 print_type(ast, fdecl->returnTypeExpr);
-                                printf(" %s();\n", get_astname_buffer(ast, name));
+                                printf(" %s();\n", get_aststring_buffer(ast, name));
                         }
                         else if (node->directiveKind == DIRECTIVE_FUNCDEFN) {
                                 struct FuncDefn *fdef = node->data.tFuncdefn;
-                                AstName name = fdef->name;
+                                AstString name = fdef->name;
                                 printf("%s: funcdefn ", fa->filepath);
                                 print_type(ast, fdef->returnTypeExpr);
-                                printf(" %s();\n", get_astname_buffer(ast, name));
+                                printf(" %s();\n", get_aststring_buffer(ast, name));
                         }
                 }
         }

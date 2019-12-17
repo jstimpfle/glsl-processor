@@ -88,7 +88,7 @@ typedef int TypeExpr;
 
 typedef struct {
         char *data; // zero-terminated
-} AstName;
+} AstString;
 
 struct LitExpr {
         double floatingValue;  // TODO better representation
@@ -141,29 +141,29 @@ struct TypeExpr {
 };
 
 struct UniformDecl {
-        AstName uniDeclName;
+        AstString uniDeclName;
         struct TypeExpr *uniDeclTypeExpr;
 };
 
 struct AttributeDecl {
         int inOrOut;
         struct TypeExpr *typeExpr;
-        AstName name;
+        AstString name;
 };
 
 struct FuncDecl {
-        AstName name;
+        AstString name;
         struct TypeExpr *returnTypeExpr;
         struct TypeExpr **argTypeExprs;
-        AstName *argNames;
+        AstString *argNames;
         int numArgs;
 };
 
 struct FuncDefn {
-        AstName name;
+        AstString name;
         struct TypeExpr *returnTypeExpr;
         struct TypeExpr **argTypeExprs;
-        AstName *argNames;
+        AstString *argNames;
         int numArgs;
         Stmt bodyStmt;
 };
@@ -204,18 +204,18 @@ struct ShaderfileAst {
 };
 
 struct ProgramDecl {
-        AstName programName;
+        AstString programName;
 };
 
 struct ShaderDecl {
-        AstName shaderName;
+        AstString shaderName;
         int shaderType;  //SHADERTYPE_??
-        AstName shaderFilepath;
+        AstString shaderFilepath;
 };
 
 struct LinkItem {
-        AstName programName;
-        AstName shaderName;
+        AstString programName;
+        AstString shaderName;
 };
 
 struct Ast {
@@ -232,7 +232,7 @@ struct Ast {
         int currentFileIndex;  // global state for simpler code
 
         // TODO: think about allocation strategy...
-        struct AstName *astStrings;
+        struct AstString *astStrings;
         struct UniformNode *uniforms;
         struct AttributeNode *attributes;
         struct FuncDeclNode *funcDecls;
@@ -246,7 +246,7 @@ extern const struct BinopInfo binopInfo[NUM_BINOP_KINDS];
 extern const struct BinopTokenInfo binopTokenInfo[];
 extern const int numBinopTokens;
 
-AstName create_astname(struct Ast *ast, const char *string);
+AstString create_aststring(struct Ast *ast, const char *string);
 struct TypeExpr *create_typeexpr(struct Ast *ast);
 struct UniformDecl *create_uniformdecl(struct Ast *ast);
 struct AttributeDecl *create_attributedecl(struct Ast *ast);
@@ -265,7 +265,7 @@ void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath);
 void setup_ast(struct Ast *ast);
 void teardown_ast(struct Ast *ast);
 
-static inline const char *get_astname_buffer(struct Ast *ast, AstName name)
+static inline const char *get_aststring_buffer(struct Ast *ast, AstString name)
 {
         UNUSED(ast);
         return name.data;
