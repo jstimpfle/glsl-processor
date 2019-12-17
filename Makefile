@@ -20,10 +20,10 @@ LDFLAGS += -rdynamic # needed so that backtrace() can print function names
 
 OBJECTS = $(CFILES:%.c=BUILD/%.o)
 
-all: main
+all: glsl-processor
 
 clean:
-	rm -rf BUILD main
+	rm -rf BUILD glsl-processor
 
 BUILD/%.o: %.c BUILD/src
 	$(COMPILE) $(CFLAGS) -o $@ $<
@@ -31,5 +31,5 @@ BUILD/%.o: %.c BUILD/src
 BUILD/src:
 	mkdir -p BUILD/src
 
-main: $(OBJECTS)
+glsl-processor: $(OBJECTS)
 	$(LINK) $(LDFLAGS) $^ -o $@
