@@ -616,15 +616,14 @@ void parse_next_file(struct Ctx *ctx, const char *filepath, const char *fileCont
         parse(ctx);
 }
 
-void setup_ctx(struct Ctx *ctx)
+void setup_ctx(struct Ctx *ctx, struct Ast *ast)
 {
         memset(ctx, 0, sizeof *ctx);
-        ALLOC_MEMORY(&ctx->ast, 1);
-        setup_ast(ctx->ast);
+        ctx->ast = ast;
 }
 
 void teardown_ctx(struct Ctx *ctx)
 {
-        teardown_ast(ctx->ast);
         FREE_MEMORY(&ctx->tokenBuffer);
+        memset(ctx, 0, sizeof *ctx);
 }

@@ -20,7 +20,7 @@ struct Ctx {
         int tokenBufferCapacity;
 };
 
-void setup_ctx(struct Ctx *ctx);
+void setup_ctx(struct Ctx *ctx, struct Ast *ast);
 void teardown_ctx(struct Ctx *ctx);
 
 void parse_next_file(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize);
