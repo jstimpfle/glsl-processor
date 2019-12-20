@@ -45,9 +45,16 @@ static void *allocate_pooled_object(struct Ast *ast, int poolKind)
 
 #define DEFINE_ALLOCATOR_FUNCTION(type, name, poolKind) type *name(struct Ast *ast) { return allocate_pooled_object(ast, (poolKind)); }
 
-DEFINE_ALLOCATOR_FUNCTION(struct ProgramDecl, create_program_decl, POOL_PROGRAMDECL)
-DEFINE_ALLOCATOR_FUNCTION(struct ShaderDecl, create_shader_decl, POOL_SHADERDECL)
-DEFINE_ALLOCATOR_FUNCTION(struct LinkItem, create_link_item, POOL_LINKITEM)
+#define DEFINE_ARRAY_ALLOCATOR_FUNCTION(type, name, structName, countMember, arrayMember) type *name(structName *container) \
+{ \
+        int idx = container->countMember++; \
+        REALLOC_MEMORY(&container->arrayMember, container->countMember); \
+        return &container->arrayMember[idx]; \
+}
+
+DEFINE_ARRAY_ALLOCATOR_FUNCTION(struct ProgramDecl, create_program_decl, struct Ast, numPrograms, programDecls)
+DEFINE_ARRAY_ALLOCATOR_FUNCTION(struct ShaderDecl, create_shader_decl, struct Ast, numShaders, shaderDecls)
+DEFINE_ARRAY_ALLOCATOR_FUNCTION(struct LinkItem, create_link_item, struct Ast, numLinkItems, linkItems)
 DEFINE_ALLOCATOR_FUNCTION(struct TypeExpr, create_typeexpr, POOL_TYPEEXPR)
 DEFINE_ALLOCATOR_FUNCTION(struct UniformDecl, create_uniformdecl, POOL_UNIFORMDECL)
 DEFINE_ALLOCATOR_FUNCTION(struct AttributeDecl, create_attributedecl, POOL_ATTRIBUTEDECL)

@@ -16,9 +16,11 @@ static void read_file(const char *filepath, struct FileToRead *out)
         char *fileContents = NULL;
         int fileSize;
         FILE *fileHandle = fopen(filepath, "rb");
+        if (fileHandle == NULL)
+                fatal_f("Failed to open '%s'", filepath);
         fseek(fileHandle, 0, SEEK_END);
         fileSize = ftell(fileHandle);
-        message_f("File size is %d bytes", fileSize);
+        //message_f("File size is %d bytes", fileSize);
         fseek(fileHandle, 0, SEEK_SET);
         ALLOC_MEMORY(&fileContents, fileSize + 1);
         int r = fread(fileContents, fileSize, 1, fileHandle);
@@ -60,9 +62,10 @@ int main(int argc, const char **argv)
                 // TODO: when to dispose file contents?
         }
 
-        for (int i = 1; i < ctx.ast->numShaders; i++) {
-                const char *filepath = get_aststring_buffer(ctx.ast, ctx.ast->shaderDecls[i].shaderFilepath); //XXX
-                message_f("filepath is: %s", filepath);
+        ALLOC_MEMORY(&ctx.ast->shaderfileAsts, ctx.ast->numShaders);
+        for (int i = 0; i < ctx.ast->numShaders; i++) {
+                struct ShaderDecl *shaderDecl = &ctx.ast->shaderDecls[i];
+                const char *filepath = get_aststring_buffer(ctx.ast, shaderDecl->shaderFilepath);
                 parse_file(&ctx, filepath);
         }
 

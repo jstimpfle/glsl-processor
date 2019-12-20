@@ -213,7 +213,7 @@ skipwhitespace:
                         nAfter--;
                         floatingValue /= 10.0;
                 }
-                message_f("read floating value: %f", floatingValue);
+                //message_f("read floating value: %f", floatingValue);
         }
         else if (c == '"') {
                 ctx->tokenKind = TOKEN_STRING;
@@ -228,7 +228,7 @@ skipwhitespace:
                                 break;
                         }
                         else if (c == -1) {
-                                message_s("EOF");
+                                //message_s("EOF");
                                 break;
                         }
                         else {
@@ -337,7 +337,7 @@ struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
         for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++) {
                 if (is_keyword(ctx, primtypeInfo[i].name)) {
                         consume_token(ctx);
-                        message_f("parsed type %s", primtypeInfo[i].name);
+                        //message_f("parsed type %s", primtypeInfo[i].name);
                         struct TypeExpr *typeExpr = create_typeexpr(ctx->ast);
                         typeExpr->primtypeKind = i;
                         return typeExpr;
@@ -362,7 +362,7 @@ struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
 static AstString parse_name(struct Ctx *ctx)
 {
         expect_token_kind(ctx, TOKEN_NAME);
-        message_f("name is '%s'", ctx->tokenBuffer);
+        //message_f("name is '%s'", ctx->tokenBuffer);
         AstString name = create_aststring(ctx->ast, ctx->tokenBuffer);
         consume_token(ctx);
         return name;
@@ -438,7 +438,7 @@ static void parse_expression(struct Ctx *ctx)
         int binopKind;
         if (look_token(ctx) && is_binop_token(ctx, &binopKind)) {
                 consume_token(ctx);
-                message_f("Found '%s' binop", binopInfo[binopKind].text);
+                //message_f("Found '%s' binop", binopInfo[binopKind].text);
                 parse_expression(ctx);
         }
 }
@@ -516,7 +516,7 @@ static void parse_stmt(struct Ctx *ctx)
 
 static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
 {
-        message_f("Function!", ctx->tokenBufferLength);
+        //message_f("Function!", ctx->tokenBufferLength);
         struct TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
         AstString name = parse_name(ctx);
         parse_simple_token(ctx, TOKEN_LEFTPAREN);
