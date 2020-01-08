@@ -216,6 +216,9 @@ struct ShaderDecl {
 struct LinkItem {
         AstString programName;
         AstString shaderName;
+        // for now, we'll just put these here...
+        int resolvedProgramIndex;
+        int resolvedShaderIndex;
 };
 
 struct Ast {

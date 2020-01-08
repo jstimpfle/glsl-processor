@@ -168,6 +168,7 @@ int look_linker_token(struct LinkerReadCtx *ctx)
                            "Expected token, found character '%c'", c);
         ctx->tokenLength = 0;
         ctx->haveSavedToken = 1;
+        return 1;
 }
 
 void consume_linker_token(struct LinkerReadCtx *ctx)
