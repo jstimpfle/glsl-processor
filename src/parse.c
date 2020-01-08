@@ -307,7 +307,7 @@ static int look_token_kind(struct Ctx *ctx, int tokenKind)
         return look_token(ctx) && ctx->tokenKind == tokenKind;
 }
 
-static int expect_token_kind(struct Ctx *ctx, int tokenKind)
+static void expect_token_kind(struct Ctx *ctx, int tokenKind)
 {
         if (!look_token_kind(ctx, tokenKind))
                 fatal_parse_error_f(ctx, "expected '%s' token, found: '%s'",

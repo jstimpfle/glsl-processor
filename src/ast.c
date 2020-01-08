@@ -3,7 +3,7 @@
 
 AstString create_aststring(struct Ast *ast, const char *data)
 {
-        int length = strlen(data);
+        int length = (int) strlen(data);
         AstString astString;
         ALLOC_MEMORY(&astString.data, length + 1);
         memcpy(astString.data, data, length + 1);
@@ -27,8 +27,9 @@ static int poolObjectSize[NUM_POOL_KINDS] = {
         MAKE(POOL_PROGRAMDECL, struct ProgramDecl),
         MAKE(POOL_SHADERDECL, struct ShaderDecl),
         MAKE(POOL_LINKITEM, struct LinkItem),
-        MAKE(POOL_TYPEEXPR, struct TypeExpr),
         MAKE(POOL_UNIFORMDECL, struct UniformDecl),
+        MAKE(POOL_ATTRIBUTEDECL, struct AttributeDecl),
+        MAKE(POOL_TYPEEXPR, struct TypeExpr),
         MAKE(POOL_FUNCDECL, struct FuncDecl),
         MAKE(POOL_FUNCDEFN, struct FuncDefn),
 #undef MAKE
@@ -43,7 +44,11 @@ static void *allocate_pooled_object(struct Ast *ast, int poolKind)
         return ptr;
 }
 
-#define DEFINE_ALLOCATOR_FUNCTION(type, name, poolKind) type *name(struct Ast *ast) { return allocate_pooled_object(ast, (poolKind)); }
+#define DEFINE_ALLOCATOR_FUNCTION(type, name, poolKind) type *name(struct Ast *ast) \
+{ \
+        assert(poolObjectSize[poolKind] == sizeof(type)); \
+        return allocate_pooled_object(ast, (poolKind)); \
+}
 
 #define DEFINE_ARRAY_ALLOCATOR_FUNCTION(type, name, structName, countMember, arrayMember) type *name(structName *container) \
 { \
@@ -63,18 +68,15 @@ DEFINE_ALLOCATOR_FUNCTION(struct FuncDefn, create_funcdefn, POOL_FUNCDEFN)
 
 struct ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct ShaderfileAst *fa)
 {
-        ++fa->numToplevelNodes;
+        int idx = fa->numToplevelNodes ++;
         REALLOC_MEMORY(&fa->toplevelNodes, fa->numToplevelNodes);
-
-        struct ToplevelNode *toplevelNode;
-        ALLOC_MEMORY(&toplevelNode, 1);
-        fa->toplevelNodes[fa->numToplevelNodes - 1] = toplevelNode;
-        return toplevelNode;
+        ALLOC_MEMORY(&fa->toplevelNodes[idx], 1);
+        return fa->toplevelNodes[idx];
 }
 
 struct ToplevelNode *add_new_toplevel_node(struct Ast *ast)
 {
-        add_new_toplevel_node_to_shaderfileast(&ast->shaderfileAsts[ast->currentFileIndex]);
+        return add_new_toplevel_node_to_shaderfileast(&ast->shaderfileAsts[ast->currentFileIndex]);
 }
 
 void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath)
@@ -83,7 +85,7 @@ void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath)
         REALLOC_MEMORY(&ast->shaderfileAsts, ast->numFiles);
         struct ShaderfileAst *fa = &ast->shaderfileAsts[index];
         memset(fa, 0, sizeof *fa);
-        int filepathLength = strlen(filepath);
+        int filepathLength = (int) strlen(filepath);
         ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
         memcpy(fa->filepath, filepath, filepathLength + 1);
         // switch

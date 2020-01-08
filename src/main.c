@@ -23,7 +23,7 @@ static void read_file(const char *filepath, struct FileToRead *out)
         //message_f("File size is %d bytes", fileSize);
         fseek(fileHandle, 0, SEEK_SET);
         ALLOC_MEMORY(&fileContents, fileSize + 1);
-        int r = fread(fileContents, fileSize, 1, fileHandle);
+        size_t r = fread(fileContents, fileSize, 1, fileHandle);
         if (r != 1)
                 fatal_f("Error reading file %s", filepath);
         fclose(fileHandle);
@@ -43,7 +43,7 @@ void parse_file(struct Ctx *ctx, const char *filepath)
 int main(int argc, const char **argv)
 {
         if (argc != 2) {
-                message_f("Usage: %s <linker-file>");
+                message_f("Usage: glsl-processor <linker-file>");
                 return 1;
         }
 
