@@ -9,7 +9,7 @@ static void print_type(struct Ast *ast, struct TypeExpr *typeExpr)
         if (kind == -1) //XXX
                 printf("void");
         else
-                printf("%s", primtypeInfo[typeExpr->primtypeKind].name);
+                printf("%s", primtypeString[typeExpr->primtypeKind]);
 }
 
 void print_interface_of_shaderfile(struct Ast *ast, struct ShaderfileAst *fa)
@@ -24,13 +24,16 @@ void print_interface_of_shaderfile(struct Ast *ast, struct ShaderfileAst *fa)
                         print_type(ast, typeExpr);
                         printf(" %s;\n", nameBuffer);
                 }
-                else if (node->directiveKind == DIRECTIVE_ATTRIBUTE) {
-                        struct AttributeDecl *adecl = node->data.tAttribute;
-                        AstString name = adecl->name;
-                        struct TypeExpr *typeExpr = adecl->typeExpr;
+                else if (node->directiveKind == DIRECTIVE_VARIABLE) {
+                        struct VariableDecl *vdecl = node->data.tVariable;
+                        // TODO: check that this is a vertex shader.
+                        if (vdecl->inOrOut != 0) /* TODO: enum for this. Only "in" variable in the vertex shaders are attributes. */
+                                continue;
+                        AstString name = vdecl->name;
+                        struct TypeExpr *typeExpr = vdecl->typeExpr;
                         const char *nameBuffer = get_aststring_buffer(ast, name);
                         printf("%s: attribute ", fa->filepath);
-                        printf("%s ", adecl->inOrOut ? "out" : "in");
+                        printf("%s ", vdecl->inOrOut ? "out" : "in");
                         print_type(ast, typeExpr);
                         printf(" %s;\n", nameBuffer);
                 }
@@ -75,22 +78,7 @@ void teardown_printInterfacesCtx(struct PrintInterfacesCtx *ctx)
         memset(ctx, 0, sizeof *ctx);
 }
 
-static int find_program_index(struct Ast *ast, const char *programName)
-{
-        for (int i = 0; i < ast->numShaders; i++)
-                if (!strcmp(programName, get_aststring_buffer(ast, ast->programDecls[i].programName)))
-                        return i;
-        fatal_f("Referenced Shader does not exist: %s", programName);
-}
-
-static int find_shader_index(struct Ast *ast, const char *shaderName)
-{
-        for (int i = 0; i < ast->numShaders; i++)
-                if (!strcmp(shaderName, get_aststring_buffer(ast, ast->shaderDecls[i].shaderName)))
-                        return i;
-        fatal_f("Referenced Shader does not exist: %s", shaderName);
-}
-
+/*
 void print_necessary_interfaces_for_shaderfile(struct PrintInterfacesCtx *ctx, const char *shaderName)
 {
         memset(ctx->visited, 0, ctx->ast->numShaders * sizeof *ctx->visited);
@@ -103,16 +91,7 @@ void print_necessary_interfaces_for_shaderfile(struct PrintInterfacesCtx *ctx, c
         for (int i = 0; i < ctx->numTodo; i++) {
         }
 }
-
-static void resolve_all_references(struct Ast *ast)
-{
-        for (int i = 0; i < ast->numLinkItems; i++) {
-                AstString programName = ast->linkItems[i].programName;
-                AstString shaderName = ast->linkItems[i].shaderName;
-                ast->linkItems[i].resolvedProgramIndex = find_program_index(ast, get_aststring_buffer(ast, programName));
-                ast->linkItems[i].resolvedShaderIndex = find_shader_index(ast, get_aststring_buffer(ast, shaderName));
-        }
-}
+*/
 
 void process_ast(struct Ast *ast)
 {

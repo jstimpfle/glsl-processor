@@ -69,11 +69,11 @@ enum {
         NUM_PRIMTYPE_KINDS
 };
 
-struct PrimtypeInfo {
-        const char *name;
+enum {
+        SHADERTYPE_VERTEX,
+        SHADERTYPE_FRAGMENT,
+        NUM_SHADERTYPE_KINDS
 };
-
-extern const struct PrimtypeInfo primtypeInfo[NUM_PRIMTYPE_KINDS];
 
 enum {
         STMT_EXPR,
@@ -136,6 +136,9 @@ struct StmtNode {
         } data;
 };
 
+/* we probably should get rid of this type. GLSL has - to my knowledge - only
+a fixed number of types (which are all built in) and some parts of the code
+even rely on that fact. */
 struct TypeExpr {
         int primtypeKind;
 };
@@ -145,7 +148,7 @@ struct UniformDecl {
         struct TypeExpr *uniDeclTypeExpr;
 };
 
-struct AttributeDecl {
+struct VariableDecl {
         int inOrOut;
         struct TypeExpr *typeExpr;
         AstString name;
@@ -171,7 +174,7 @@ struct FuncDefn {
 
 enum {
         DIRECTIVE_UNIFORM,
-        DIRECTIVE_ATTRIBUTE,
+        DIRECTIVE_VARIABLE,  // "in" or "out"
         DIRECTIVE_FUNCDECL,
         DIRECTIVE_FUNCDEFN,
 };
@@ -180,7 +183,7 @@ struct ToplevelNode {
         int directiveKind;
         union {
                 struct UniformDecl *tUniform;
-                struct AttributeDecl *tAttribute;
+                struct VariableDecl *tVariable;
                 struct FuncDecl *tFuncdecl;
                 struct FuncDefn *tFuncdefn;
         } data;
@@ -236,15 +239,13 @@ struct Ast {
 
         // TODO: think about allocation strategy...
         struct AstString *astStrings;
-        struct UniformNode *uniforms;
-        struct AttributeNode *attributes;
-        struct FuncDeclNode *funcDecls;
 };
 
 
 extern const char *const tokenKindString[NUM_TOKEN_KINDS];
 extern const char *const primtypeKindString[NUM_PRIMTYPE_KINDS];
 extern const char *const primtypeString[NUM_PRIMTYPE_KINDS];
+extern const char *const shadertypeKindString[NUM_SHADERTYPE_KINDS];
 extern const struct BinopInfo binopInfo[NUM_BINOP_KINDS];
 extern const struct BinopTokenInfo binopTokenInfo[];
 extern const int numBinopTokens;
@@ -252,7 +253,7 @@ extern const int numBinopTokens;
 AstString create_aststring(struct Ast *ast, const char *string);
 struct TypeExpr *create_typeexpr(struct Ast *ast);
 struct UniformDecl *create_uniformdecl(struct Ast *ast);
-struct AttributeDecl *create_attributedecl(struct Ast *ast);
+struct VariableDecl *create_variabledecl(struct Ast *ast);
 struct FuncDecl *create_funcdecl(struct Ast *ast);
 struct FuncDefn *create_funcdefn(struct Ast *ast);
 

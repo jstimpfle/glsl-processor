@@ -10,12 +10,6 @@ enum {
         NUM_LINKTOKEN_KINDS,
 };
 
-enum {
-        SHADERTYPE_VERTEX,
-        SHADERTYPE_FRAGMENT,
-        NUM_SHADERTYPE_KINDS
-};
-
 static const char *const linktokenKindString[NUM_LINKTOKEN_KINDS] = {
 #define MAKE(x) [x] = #x
         MAKE( LINKTOKEN_NAME ),
@@ -24,6 +18,7 @@ static const char *const linktokenKindString[NUM_LINKTOKEN_KINDS] = {
 #undef MAKE
 };
 
+/* XXX: should get rid of this... */
 static const char *const shadertypeKeywords[NUM_SHADERTYPE_KINDS] = {
         [SHADERTYPE_VERTEX] = "VERTEX_SHADER",
         [SHADERTYPE_FRAGMENT] = "FRAGMENT_SHADER",

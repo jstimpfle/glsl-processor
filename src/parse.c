@@ -135,6 +135,20 @@ skipwhitespace:
                 }
                 consume_character(ctx);
         }
+        /* currently we have very crude support for preprocess directives: Just ignoring them, like comments. */
+        if (c == '#') {
+                consume_character(ctx);
+                for (;;) {
+                        c = look_character(ctx);
+                        if (c == -1)
+                                fatal_parse_error_f(ctx,
+                                        "EOF encountered while expecting end of preprocessor directive");
+                        consume_character(ctx);
+                        if (c == '\n')
+                                break;
+                }
+                goto skipwhitespace;
+        }
         /* skip comments... */
         if (c == '/') {
                 consume_character(ctx);
@@ -285,7 +299,7 @@ int is_keyword(struct Ctx *ctx, const char *keyword)
 int is_known_type_name(struct Ctx *ctx)
 {
         for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++)
-                if (!strcmp(ctx->tokenBuffer, primtypeInfo[i].name))
+                if (!strcmp(ctx->tokenBuffer, primtypeString[i]))
                         return 1;
         return 0;
 }
@@ -335,7 +349,7 @@ struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
 {
         expect_token_kind(ctx, TOKEN_NAME);
         for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++) {
-                if (is_keyword(ctx, primtypeInfo[i].name)) {
+                if (is_keyword(ctx, primtypeString[i])) {
                         consume_token(ctx);
                         //message_f("parsed type %s", primtypeInfo[i].name);
                         struct TypeExpr *typeExpr = create_typeexpr(ctx->ast);
@@ -368,17 +382,17 @@ static AstString parse_name(struct Ctx *ctx)
         return name;
 }
 
-static struct AttributeDecl *parse_varying(struct Ctx *ctx, int inOrOut)
+static struct VariableDecl *parse_variable(struct Ctx *ctx, int inOrOut)
 {
         consume_token(ctx); // "in" or "out"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
         AstString name = parse_name(ctx);
         parse_semicolon(ctx);
-        struct AttributeDecl *attributeDecl = create_attributedecl(ctx->ast);
-        attributeDecl->inOrOut = inOrOut;
-        attributeDecl->name = name;
-        attributeDecl->typeExpr = typeExpr;
-        return attributeDecl;
+        struct VariableDecl *variableDecl = create_variabledecl(ctx->ast);
+        variableDecl->inOrOut = inOrOut;
+        variableDecl->name = name;
+        variableDecl->typeExpr = typeExpr;
+        return variableDecl;
 }
 
 static struct UniformDecl *parse_uniform(struct Ctx *ctx)
@@ -579,13 +593,13 @@ static void parse(struct Ctx *ctx)
                 }
                 else if (is_keyword(ctx, "in")) {
                         struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
-                        node->directiveKind = DIRECTIVE_ATTRIBUTE;
-                        node->data.tAttribute = parse_varying(ctx, 0);
+                        node->directiveKind = DIRECTIVE_VARIABLE;
+                        node->data.tVariable = parse_variable(ctx, 0);
                 }
                 else if (is_keyword(ctx, "out")) {
                         struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
-                        node->directiveKind = DIRECTIVE_ATTRIBUTE;
-                        node->data.tAttribute = parse_varying(ctx, 1);
+                        node->directiveKind = DIRECTIVE_VARIABLE;
+                        node->data.tVariable = parse_variable(ctx, 1);
                 }
                 else if (ctx->tokenKind == TOKEN_NAME) {
                         parse_FuncDefn_or_FuncDecl(ctx);

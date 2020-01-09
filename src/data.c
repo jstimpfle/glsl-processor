@@ -75,7 +75,7 @@ const struct BinopTokenInfo binopTokenInfo[] = {
 const int numBinopTokens = LENGTH(binopTokenInfo);
 
 
-const struct PrimtypeInfo primtypeInfo[NUM_PRIMTYPE_KINDS] = {
+const char *const primtypeString[NUM_PRIMTYPE_KINDS] = {
         ENUM_TO_STRING( PRIMTYPE_FLOAT, "float" ),
         ENUM_TO_STRING( PRIMTYPE_VEC2, "vec2" ),
         ENUM_TO_STRING( PRIMTYPE_VEC3, "vec3" ),
@@ -83,4 +83,19 @@ const struct PrimtypeInfo primtypeInfo[NUM_PRIMTYPE_KINDS] = {
         ENUM_TO_STRING( PRIMTYPE_MAT2, "mat2" ),
         ENUM_TO_STRING( PRIMTYPE_MAT3, "mat3" ),
         ENUM_TO_STRING( PRIMTYPE_MAT4, "mat4" ),
+};
+
+const char *const primtypeKindString[NUM_PRIMTYPE_KINDS] = {
+        ENUM_KIND_STRING(PRIMTYPE_FLOAT),
+        ENUM_KIND_STRING(PRIMTYPE_VEC2),
+        ENUM_KIND_STRING(PRIMTYPE_VEC3),
+        ENUM_KIND_STRING(PRIMTYPE_VEC4),
+        ENUM_KIND_STRING(PRIMTYPE_MAT2),
+        ENUM_KIND_STRING(PRIMTYPE_MAT3),
+        ENUM_KIND_STRING(PRIMTYPE_MAT4),
+};
+
+const char *const shadertypeKindString[NUM_SHADERTYPE_KINDS] = {
+        [SHADERTYPE_VERTEX] = "SHADERTYPE_VERTEX",
+        [SHADERTYPE_FRAGMENT] = "SHADERTYPE_FRAGMENT",
 };
