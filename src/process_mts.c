@@ -205,14 +205,24 @@ void end_enum(struct MtsCtx *ctx)
         fprintf(ctx->hFileHandle, "};\n");
 }
 
-void add_enum_item(struct MtsCtx *ctx, const char *enumPrefix, const char *name)
+void add_enum_item(struct MtsCtx *ctx, const char *name1)
 {
-        fprintf(ctx->hFileHandle, "        %s_%s,\n", enumPrefix, name);
+        fprintf(ctx->hFileHandle, "        %s,\n", name1);
+}
+
+void add_enum_item_2(struct MtsCtx *ctx, const char *name1, const char *name2)
+{
+        fprintf(ctx->hFileHandle, "        %s_%s,\n", name1, name2);
+}
+
+void add_enum_item_3(struct MtsCtx *ctx, const char *name1, const char *name2, const char *name3)
+{
+        fprintf(ctx->hFileHandle, "        %s_%s_%s,\n", name1, name2, name3);
 }
 
 void add_enum_item_AstString(struct MtsCtx *ctx, const char *enumPrefix, AstString astString)
 {
-        add_enum_item(ctx, enumPrefix, get_aststring_buffer(ctx->ast, astString));
+        add_enum_item_2(ctx, enumPrefix, get_aststring_buffer(ctx->ast, astString));
 }
 
 void process_mts(struct Ast *ast)
@@ -224,18 +234,74 @@ void process_mts(struct Ast *ast)
         ctx->cFileHandle = create_or_truncate_file_and_open_for_writing(IFACE_C_FILEPATH);
         ctx->hFileHandle = create_or_truncate_file_and_open_for_writing(IFACE_H_FILEPATH);
 
+        fprintf(ctx->hFileHandle, "%s",
+                "enum {\n"
+                "        PRIMTYPE_FLOAT,\n"
+                "        PRIMTYPE_VEC2,\n"
+                "        PRIMTYPE_VEC3,\n"
+                "        PRIMTYPE_VEC4,\n"
+                "        PRIMTYPE_MAT2,\n"
+                "        PRIMTYPE_MAT3,\n"
+                "        PRIMTYPE_MAT4,\n"
+                "};\n"
+                );
+
         begin_enum(ctx);
         for (int i = 0; i < ast->numPrograms; i++)
                 add_enum_item_AstString(ctx, "PROGRAM", ast->programDecls[i].programName);
+        add_enum_item(ctx, "NUM_PROGRAM_KINDS");
         end_enum(ctx);
 
         begin_enum(ctx);
-        for (int i = 0; i < ast->numPrograms; i++)
+        for (int i = 0; i < ast->numShaders; i++)
                 add_enum_item_AstString(ctx, "SHADER", ast->shaderDecls[i].shaderName);
+        add_enum_item(ctx, "NUM_SHADER_KINDS");
+        end_enum(ctx);
+
+        //XXX: too much code here
+        begin_enum(ctx);
+        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+                const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
+                struct UniformIterator uniformIter;
+                for (begin_iterating_uniforms(&uniformIter, ast, programIndex);
+                        have_uniform(&uniformIter); go_to_next_uniform(&uniformIter))
+                {
+                        struct UniformDecl *decl = get_uniform(&uniformIter);
+                        const char *uniformName = get_aststring_buffer(ast, decl->uniDeclName);
+                        add_enum_item_3(ctx, "UNIFORM", programName, uniformName);
+                }
+        }
+        add_enum_item(ctx, "NUM_UNIFORM_KINDS");
+        end_enum(ctx);
+
+        //XXX: too much code here
+        begin_enum(ctx);
+        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+                const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
+                struct VariableIterator variableIter;
+                for (begin_iterating_variables(&variableIter, ast, programIndex);
+                        have_variable(&variableIter); go_to_next_variable(&variableIter))
+                {
+                        struct VariableDecl *decl = get_variable(&variableIter);
+                        if (decl->inOrOut != 0) /* TODO: enum for this. 0 == IN direction */
+                                continue;
+                        { // this code is too complex. It should be easier to determine the shader type.
+                                int shaderIndex = ast->linkItems[variableIter.shaderIter.linkIndex].resolvedShaderIndex;
+                                int shaderType = ast->shaderDecls[shaderIndex].shaderType;
+                                if (shaderType != SHADERTYPE_VERTEX)
+                                        continue;  // only vertex shaders can contain attributes. Attributes are "in" variables of the vertex shader.
+                        }
+                        const char *attribName = get_aststring_buffer(ast, decl->name);
+                        int primtypeKind = decl->typeExpr->primtypeKind;
+                        const char *typeName = primtypeKindString[primtypeKind];
+                        add_enum_item_3(ctx, "ATTRIBUTE", programName, attribName);
+                }
+        }
+        add_enum_item(ctx, "NUM_ATTRIBUTE_KINDS");
         end_enum(ctx);
 
         fprintf(ctx->hFileHandle,
-                "#include <GLshadermanager.h>\n"
+                "#include <GLshadermanager/GLshadermanager.h>\n"
                 "extern const struct SM_ShaderInfo smShaderInfo[NUM_SHADER_KINDS];\n"
                 "extern const struct SM_ProgramInfo smProgramInfo[NUM_PROGRAM_KINDS];\n"
                 "extern const struct SM_LinkInfo smLinkInfo[];\n"
