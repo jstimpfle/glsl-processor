@@ -18,8 +18,9 @@ enum {
         TOKEN_SEMICOLON,
         TOKEN_PLUS,
         TOKEN_MINUS,
-        TOKEN_SLASH,
         TOKEN_STAR,
+        TOKEN_SLASH,
+        TOKEN_PERCENT,
         TOKEN_EQUALS,
         TOKEN_DOUBLEEQUALS,
         TOKEN_NE,
@@ -27,11 +28,17 @@ enum {
         TOKEN_LE,
         TOKEN_GE,
         TOKEN_GT,
+        TOKEN_NOT,
         TOKEN_AMPERSAND,
         TOKEN_DOUBLEAMPERSAND,
         TOKEN_PIPE,
         TOKEN_DOUBLEPIPE,
         NUM_TOKEN_KINDS
+};
+
+enum {
+        UNOP_NOT,
+        NUM_UNOP_KINDS,
 };
 
 enum {
@@ -45,6 +52,7 @@ enum {
         BINOP_MINUS,
         BINOP_MUL,
         BINOP_DIV,
+        BINOP_MOD,
         BINOP_ASSIGN,
         BINOP_BITAND,
         BINOP_BITOR,
@@ -189,8 +197,17 @@ struct ToplevelNode {
         } data;
 };
 
+struct UnopInfo {
+        char *text;
+};
+
 struct BinopInfo {
         char *text;
+};
+
+struct UnopTokenInfo {
+        int tokenKind;
+        int unopKind;
 };
 
 struct BinopTokenInfo {
@@ -246,8 +263,11 @@ extern const char *const tokenKindString[NUM_TOKEN_KINDS];
 extern const char *const primtypeKindString[NUM_PRIMTYPE_KINDS];
 extern const char *const primtypeString[NUM_PRIMTYPE_KINDS];
 extern const char *const shadertypeKindString[NUM_SHADERTYPE_KINDS];
+extern const struct UnopInfo unopInfo[NUM_UNOP_KINDS];
+extern const struct UnopTokenInfo unopTokenInfo[];
 extern const struct BinopInfo binopInfo[NUM_BINOP_KINDS];
 extern const struct BinopTokenInfo binopTokenInfo[];
+extern const int numUnopToken;
 extern const int numBinopTokens;
 
 AstString create_aststring(struct Ast *ast, const char *string);

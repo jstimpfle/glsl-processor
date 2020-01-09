@@ -102,8 +102,10 @@ static const struct {
         { ';', TOKEN_SEMICOLON },
         { '+', TOKEN_PLUS },
         { '-', TOKEN_MINUS },
-        { '/', TOKEN_SLASH },
         { '*', TOKEN_STAR },
+        { '/', TOKEN_SLASH },
+        { '%', TOKEN_PERCENT },
+        { '!', TOKEN_NOT },
 };
 
 static const struct {
@@ -345,9 +347,24 @@ static void parse_semicolon(struct Ctx *ctx)
         parse_simple_token(ctx, TOKEN_SEMICOLON);
 }
 
-struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
+static AstString parse_name(struct Ctx *ctx)
 {
         expect_token_kind(ctx, TOKEN_NAME);
+        //message_f("name is '%s'", ctx->tokenBuffer);
+        AstString name = create_aststring(ctx->ast, ctx->tokenBuffer);
+        consume_token(ctx);
+        return name;
+}
+
+//XXX: if we detect that this is an interface block, we'll return NULL
+static struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
+{
+        expect_token_kind(ctx, TOKEN_NAME);
+        while (is_keyword(ctx, "flat")) {
+                // XXX ignoring "flat" specifier for now. Not interesting to us.
+                consume_token(ctx);
+                expect_token_kind(ctx, TOKEN_NAME);
+        }
         for (int i = 0; i < NUM_PRIMTYPE_KINDS; i++) {
                 if (is_keyword(ctx, primtypeString[i])) {
                         consume_token(ctx);
@@ -357,11 +374,25 @@ struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
                         return typeExpr;
                 }
         }
-        fatal_parse_error_f(ctx, "type expected, but found '%s'",
-                            ctx->tokenBuffer);
+        // maybe this is an interface block...
+        consume_token(ctx);
+        if (look_token_kind(ctx, TOKEN_LEFTBRACE)) {
+                // this is an interface block. Parse it and ignore the contents (for now)
+                consume_token(ctx);
+                while (!look_token_kind(ctx, TOKEN_RIGHTBRACE)) {
+                        //XXX ignoreing stuff for now
+                        message_f("HERE!");
+                        parse_typeexpr(ctx);
+                        parse_name(ctx);
+                        parse_semicolon(ctx);
+                }
+                consume_token(ctx);
+                return NULL;
+        }
+        fatal_parse_error_f(ctx, "type expected or interface block was expected...");
 }
 
-struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
+static struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
 {
         expect_token_kind(ctx, TOKEN_NAME);
         if (is_keyword(ctx, "void")) {
@@ -373,19 +404,11 @@ struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
         return parse_typeexpr(ctx);
 }
 
-static AstString parse_name(struct Ctx *ctx)
-{
-        expect_token_kind(ctx, TOKEN_NAME);
-        //message_f("name is '%s'", ctx->tokenBuffer);
-        AstString name = create_aststring(ctx->ast, ctx->tokenBuffer);
-        consume_token(ctx);
-        return name;
-}
-
 static struct VariableDecl *parse_variable(struct Ctx *ctx, int inOrOut)
 {
         consume_token(ctx); // "in" or "out"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
+        // XXX WARNING currently parse_typeexpr() may return NULL, which means that this was an interface block. Is it safe to proceed?
         AstString name = parse_name(ctx);
         parse_semicolon(ctx);
         struct VariableDecl *variableDecl = create_variabledecl(ctx->ast);
@@ -399,6 +422,9 @@ static struct UniformDecl *parse_uniform(struct Ctx *ctx)
 {
         consume_token(ctx); // "uniform"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
+        // currently parse_typeexpr may return NULL, but this is not valid for uniforms.
+        if (typeExpr == NULL)
+                fatal_parse_error_f(ctx, "Can't use an interface block as a type for a uniform.");
         AstString name = parse_name(ctx);
         parse_semicolon(ctx);
         struct UniformDecl *uniformDecl = create_uniformdecl(ctx->ast);
@@ -421,6 +447,10 @@ static void parse_expression(struct Ctx *ctx)
                 consume_token(ctx);
                 parse_expression(ctx);
                 parse_simple_token(ctx, TOKEN_RIGHTPAREN);
+        }
+        else if (ctx->tokenKind == TOKEN_NOT) {
+                consume_token(ctx);
+                parse_expression(ctx);
         }
         else {
                 fatal_parse_error_f(ctx, "Expected expression");

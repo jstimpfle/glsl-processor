@@ -5,15 +5,19 @@
 
 static void print_type(struct Ast *ast, struct TypeExpr *typeExpr)
 {
-        int kind = typeExpr->primtypeKind;
-        if (kind == -1) //XXX
+        if (typeExpr == NULL)
+                // we should not handle this but I need to figure out what's happening right now while I'm writing this comment.
+                printf("(WARNING: type missing???)");
+        else if (typeExpr->primtypeKind == -1) //XXX
                 printf("void");
         else
                 printf("%s", primtypeString[typeExpr->primtypeKind]);
 }
 
-void print_interface_of_shaderfile(struct Ast *ast, struct ShaderfileAst *fa)
+void print_interface_of_shaderfile(struct Ast *ast, int shaderIndex)
 {
+        struct ShaderDecl *shaderDecl = &ast->shaderDecls[shaderIndex];
+        struct ShaderfileAst *fa = &ast->shaderfileAsts[shaderIndex];
         for (int i = 0; i < fa->numToplevelNodes; i++) {
                 struct ToplevelNode *node = fa->toplevelNodes[i];
                 if (node->directiveKind == DIRECTIVE_UNIFORM) {
@@ -26,9 +30,14 @@ void print_interface_of_shaderfile(struct Ast *ast, struct ShaderfileAst *fa)
                 }
                 else if (node->directiveKind == DIRECTIVE_VARIABLE) {
                         struct VariableDecl *vdecl = node->data.tVariable;
-                        // TODO: check that this is a vertex shader.
+                        if (ast->shaderDecls[shaderIndex].shaderType != SHADERTYPE_VERTEX)
+                                continue;  // attributes can occur only in vertex shaders.
                         if (vdecl->inOrOut != 0) /* TODO: enum for this. Only "in" variable in the vertex shaders are attributes. */
                                 continue;
+                        if (vdecl->typeExpr == NULL) // this should only happen if the type was an interface block.
+                                fatal_f("File %s is a %s, so is not allowed to contain an interface block",
+                                        get_aststring_buffer(ast, shaderDecl->shaderFilepath),
+                                        shadertypeKindString[shaderDecl->shaderType]);
                         AstString name = vdecl->name;
                         struct TypeExpr *typeExpr = vdecl->typeExpr;
                         const char *nameBuffer = get_aststring_buffer(ast, name);
@@ -98,7 +107,7 @@ void process_ast(struct Ast *ast)
         struct PrintInterfacesCtx ctx;
         setup_printInterfaceCtx(&ctx, ast);
         for (int i = 0; i < ast->numFiles; i++) {
-                print_interface_of_shaderfile(ast, &ast->shaderfileAsts[i]);
+                print_interface_of_shaderfile(ast, i);
         }
         teardown_printInterfacesCtx(&ctx);
 }

@@ -19,8 +19,9 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_SEMICOLON ),
         ENUM_KIND_STRING( TOKEN_PLUS ),
         ENUM_KIND_STRING( TOKEN_MINUS ),
-        ENUM_KIND_STRING( TOKEN_SLASH ),
         ENUM_KIND_STRING( TOKEN_STAR ),
+        ENUM_KIND_STRING( TOKEN_SLASH ),
+        ENUM_KIND_STRING( TOKEN_PERCENT ),
         ENUM_KIND_STRING( TOKEN_EQUALS ),
         ENUM_KIND_STRING( TOKEN_DOUBLEEQUALS ),
         ENUM_KIND_STRING( TOKEN_NE ),
@@ -28,10 +29,19 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_LE ),
         ENUM_KIND_STRING( TOKEN_GE ),
         ENUM_KIND_STRING( TOKEN_GT ),
+        ENUM_KIND_STRING( TOKEN_NOT ),
         ENUM_KIND_STRING( TOKEN_AMPERSAND ),
         ENUM_KIND_STRING( TOKEN_DOUBLEAMPERSAND ),
         ENUM_KIND_STRING( TOKEN_PIPE ),
         ENUM_KIND_STRING( TOKEN_DOUBLEPIPE ),
+};
+
+const struct UnopInfo unopInfo[NUM_UNOP_KINDS] = {
+        [UNOP_NOT] = "!",
+};
+
+const struct UnopTokenInfo unopTokenInfo[] = {
+        { TOKEN_NOT, UNOP_NOT },
 };
 
 const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
@@ -44,8 +54,9 @@ const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
         MAKE( BINOP_GT, ">" ),
         MAKE( BINOP_PLUS, "+" ),
         MAKE( BINOP_MINUS, "-" ),
-        MAKE( BINOP_DIV, "/" ),
         MAKE( BINOP_MUL, "*" ),
+        MAKE( BINOP_DIV, "/" ),
+        MAKE( BINOP_MOD, "%" ),
         MAKE( BINOP_ASSIGN, "=" ),
         MAKE( BINOP_BITAND, "&" ),
         MAKE( BINOP_BITOR, "|" ),
@@ -57,8 +68,9 @@ const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
 const struct BinopTokenInfo binopTokenInfo[] = {
         { TOKEN_PLUS, BINOP_PLUS },
         { TOKEN_MINUS, BINOP_MINUS },
-        { TOKEN_SLASH, BINOP_DIV },
         { TOKEN_STAR, BINOP_MUL },
+        { TOKEN_SLASH, BINOP_DIV },
+        { TOKEN_PERCENT, BINOP_MOD },
         { TOKEN_EQUALS, BINOP_ASSIGN },
         { TOKEN_DOUBLEEQUALS, BINOP_EQ },
         { TOKEN_NE, BINOP_NE },
@@ -72,6 +84,7 @@ const struct BinopTokenInfo binopTokenInfo[] = {
         { TOKEN_DOUBLEPIPE, BINOP_LOGICALOR },
 };
 
+const int numUnopToken = LENGTH(unopTokenInfo);
 const int numBinopTokens = LENGTH(binopTokenInfo);
 
 
