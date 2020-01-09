@@ -95,6 +95,9 @@ int main(int argc, const char **argv)
 
         process_ast(&ast);
 
+        extern void process_mts(struct Ast *ast);
+        process_mts(&ast);
+
         teardown_ctx(&ctx);
         teardown_ast(&ast);
 
