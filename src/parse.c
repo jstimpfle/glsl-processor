@@ -1,8 +1,8 @@
-#include <glsl-compiler/defs.h>
-#include <glsl-compiler/ast.h>
-#include <glsl-compiler/parse.h>
-#include <glsl-compiler/memoryalloc.h>
-#include <glsl-compiler/logging.h>
+#include <glsl-processor/defs.h>
+#include <glsl-processor/ast.h>
+#include <glsl-processor/parse.h>
+#include <glsl-processor/memoryalloc.h>
+#include <glsl-processor/logging.h>
 
 static void compute_line_and_column(struct Ctx *ctx, int *outLine, int *outColumn)
 {

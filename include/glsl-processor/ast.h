@@ -1,8 +1,8 @@
-#ifndef GLSLCOMPILER_AST_H_INCLUDED
-#define GLSLCOMPILER_AST_H_INCLUDED
+#ifndef GLSLPROCESSOR_AST_H_INCLUDED
+#define GLSLPROCESSOR_AST_H_INCLUDED
 
-#include <glsl-compiler/defs.h>
-#include <glsl-compiler/parse.h>  // TODO: unify these two files
+#include <glsl-processor/defs.h>
+#include <glsl-processor/parse.h>  // TODO: unify these two files
 
 enum {
         TOKEN_EOF,

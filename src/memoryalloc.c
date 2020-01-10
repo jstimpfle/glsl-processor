@@ -1,5 +1,5 @@
-#include <glsl-compiler/logging.h>
-#include <glsl-compiler/memoryalloc.h>
+#include <glsl-processor/logging.h>
+#include <glsl-processor/memoryalloc.h>
 #include <stdlib.h>
 
 void _alloc_memory(struct LogCtx logCtx, void **outPtr, int numElems, int elemSize)

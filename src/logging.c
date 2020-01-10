@@ -1,5 +1,5 @@
-#include <glsl-compiler/backtrace.h>
-#include <glsl-compiler/logging.h>
+#include <glsl-processor/backtrace.h>
+#include <glsl-processor/logging.h>
 
 void _message_begin(struct LogCtx logCtx)
 {

@@ -1,5 +1,5 @@
-#include <glsl-compiler/logging.h>
-#include <glsl-compiler/backtrace.h>
+#include <glsl-processor/logging.h>
+#include <glsl-processor/backtrace.h>
 
 void print_backtrace(void)
 {

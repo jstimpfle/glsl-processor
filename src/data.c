@@ -1,7 +1,7 @@
 #undef DATA
 #define DATA
-#include <glsl-compiler/ast.h>
-#include <glsl-compiler/parse.h>
+#include <glsl-processor/ast.h>
+#include <glsl-processor/parse.h>
 
 #define ENUM_KIND_STRING(x) [x] = #x
 #define ENUM_TO_STRING(x, s) [x] = s

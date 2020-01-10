@@ -1,9 +1,9 @@
-#include <glsl-compiler/memoryalloc.h>
-#include <glsl-compiler/logging.h>
-#include <glsl-compiler/ast.h>
-#include <glsl-compiler/parse.h>
-#include <glsl-compiler/parselinkerfile.h>
-#include <glsl-compiler/process.h>
+#include <glsl-processor/memoryalloc.h>
+#include <glsl-processor/logging.h>
+#include <glsl-processor/ast.h>
+#include <glsl-processor/parse.h>
+#include <glsl-processor/parselinkerfile.h>
+#include <glsl-processor/process.h>
 #include <stdio.h>
 
 struct FileToRead {

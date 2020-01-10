@@ -1,5 +1,5 @@
-#include <glsl-compiler/memoryalloc.h>
-#include <glsl-compiler/ast.h>
+#include <glsl-processor/memoryalloc.h>
+#include <glsl-processor/ast.h>
 
 AstString create_aststring(struct Ast *ast, const char *data)
 {

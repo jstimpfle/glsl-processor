@@ -1,7 +1,7 @@
-#include <glsl-compiler/defs.h>
-#include <glsl-compiler/ast.h>
-#include <glsl-compiler/logging.h>
-#include <glsl-compiler/parselinkerfile.h>
+#include <glsl-processor/defs.h>
+#include <glsl-processor/ast.h>
+#include <glsl-processor/logging.h>
+#include <glsl-processor/parselinkerfile.h>
 
 enum {
         LINKTOKEN_NAME,

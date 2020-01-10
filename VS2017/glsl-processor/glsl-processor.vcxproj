@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{AD1488EA-1C3C-4248-9F6B-9ECA1F90D0E0}</ProjectGuid>
-    <RootNamespace>glslcompiler</RootNamespace>
+    <RootNamespace>glsl-processor</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -133,14 +133,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\glsl-compiler\backtrace.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\defs.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\logging.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\memoryalloc.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\parse.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\ast.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\parselinkerfile.h" />
-    <ClInclude Include="..\..\include\glsl-compiler\process.h" />
+    <ClInclude Include="..\..\include\glsl-processor\backtrace.h" />
+    <ClInclude Include="..\..\include\glsl-processor\defs.h" />
+    <ClInclude Include="..\..\include\glsl-processor\logging.h" />
+    <ClInclude Include="..\..\include\glsl-processor\memoryalloc.h" />
+    <ClInclude Include="..\..\include\glsl-processor\parse.h" />
+    <ClInclude Include="..\..\include\glsl-processor\ast.h" />
+    <ClInclude Include="..\..\include\glsl-processor\parselinkerfile.h" />
+    <ClInclude Include="..\..\include\glsl-processor\process.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\ast.c" />

@@ -1,5 +1,5 @@
-#ifndef GLSLCOMPILER_PARSE_H_INCLUDED
-#define GLSLCOMPILER_PARSE_H_INCLUDED
+#ifndef GLSLPROCESSOR_PARSE_H_INCLUDED
+#define GLSLPROCESSOR_PARSE_H_INCLUDED
 
 struct Ctx {
         struct Ast *ast; // This Ctx is all about creating this AST...

@@ -1,7 +1,7 @@
-#ifndef GLSLCOMPILER_LOGGING_H_INCLUDED
-#define GLSLCOMPILER_LOGGING_H_INCLUDED
+#ifndef GLSLPROCESSOR_LOGGING_H_INCLUDED
+#define GLSLPROCESSOR_LOGGING_H_INCLUDED
 
-#include <glsl-compiler/defs.h>
+#include <glsl-processor/defs.h>
 
 #include <assert.h>
 #include <stdlib.h>

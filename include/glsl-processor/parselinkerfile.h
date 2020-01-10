@@ -1,7 +1,7 @@
-#ifndef GLSLCOMPILER_PARSELINKERFILE_H_INCLUDED
-#define GLSLCOMPILER_PARSELINKERFILE_H_INCLUDED
+#ifndef GLSLPROCESSOR_PARSELINKERFILE_H_INCLUDED
+#define GLSLPROCESSOR_PARSELINKERFILE_H_INCLUDED
 
-#include <glsl-compiler/ast.h>
+#include <glsl-processor/ast.h>
 
 struct ShaderProgram {
         const char *programName;

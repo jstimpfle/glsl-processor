@@ -1,4 +1,4 @@
-#include <glsl-compiler/logging.h>
+#include <glsl-processor/logging.h>
 
 void _alloc_memory(struct LogCtx logCtx, void **outPtr, int numElems, int elemSize);
 void _realloc_memory(struct LogCtx logCtx, void **inoutPtr, int numElems, int elemSize);

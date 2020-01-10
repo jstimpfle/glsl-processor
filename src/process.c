@@ -1,6 +1,6 @@
-#include <glsl-compiler/logging.h>
-#include <glsl-compiler/memoryalloc.h>
-#include <glsl-compiler/ast.h>
+#include <glsl-processor/logging.h>
+#include <glsl-processor/memoryalloc.h>
+#include <glsl-processor/ast.h>
 #include <stdio.h> //XXX
 
 static void print_type(struct Ast *ast, struct TypeExpr *typeExpr)
