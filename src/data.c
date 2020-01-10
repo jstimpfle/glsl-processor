@@ -96,6 +96,7 @@ const char *const primtypeString[NUM_PRIMTYPE_KINDS] = {
         ENUM_TO_STRING( PRIMTYPE_MAT2, "mat2" ),
         ENUM_TO_STRING( PRIMTYPE_MAT3, "mat3" ),
         ENUM_TO_STRING( PRIMTYPE_MAT4, "mat4" ),
+        ENUM_TO_STRING( PRIMTYPE_SAMPLER2D, "sampler2D" ),
 };
 
 const char *const primtypeKindString[NUM_PRIMTYPE_KINDS] = {
@@ -106,6 +107,7 @@ const char *const primtypeKindString[NUM_PRIMTYPE_KINDS] = {
         ENUM_KIND_STRING(PRIMTYPE_MAT2),
         ENUM_KIND_STRING(PRIMTYPE_MAT3),
         ENUM_KIND_STRING(PRIMTYPE_MAT4),
+        ENUM_KIND_STRING(PRIMTYPE_SAMPLER2D),
 };
 
 const char *const shadertypeKindString[NUM_SHADERTYPE_KINDS] = {

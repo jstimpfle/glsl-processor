@@ -74,6 +74,7 @@ enum {
         PRIMTYPE_MAT2,
         PRIMTYPE_MAT3,
         PRIMTYPE_MAT4,
+        PRIMTYPE_SAMPLER2D,
         NUM_PRIMTYPE_KINDS
 };
 

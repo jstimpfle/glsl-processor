@@ -543,6 +543,7 @@ void process_mts(struct Ast *ast)
                         case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
                         case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
                         case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                        case PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
                         default: fatal_f("Not implemented!");
                         }
                         append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
