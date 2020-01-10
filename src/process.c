@@ -7,7 +7,7 @@ static void print_type(struct Ast *ast, struct TypeExpr *typeExpr)
 {
         if (typeExpr == NULL)
                 // we should not handle this but I need to figure out what's happening right now while I'm writing this comment.
-                printf("(WARNING: type missing???)");
+                printf("(WARNING: type missing?)");
         else if (typeExpr->primtypeKind == -1) //XXX
                 printf("void");
         else

@@ -2,6 +2,7 @@ COMPILE = gcc -c -std=c99
 LINK = gcc
 
 CFLAGS += -g
+CFLAGS += -Wall
 CFLAGS += -Iinclude
 CFLAGS += -DDATA=extern
 
@@ -12,6 +13,7 @@ CFILES += src/data.c
 CFILES += src/parse.c
 CFILES += src/parselinkerfile.c
 CFILES += src/process.c
+CFILES += src/process_mts.c
 CFILES += src/logging.c
 CFILES += src/main.c
 CFILES += src/memoryalloc.c

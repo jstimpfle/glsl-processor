@@ -37,7 +37,7 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
 };
 
 const struct UnopInfo unopInfo[NUM_UNOP_KINDS] = {
-        [UNOP_NOT] = "!",
+        [UNOP_NOT] = { "!" },
 };
 
 const struct UnopTokenInfo unopTokenInfo[] = {
@@ -45,7 +45,7 @@ const struct UnopTokenInfo unopTokenInfo[] = {
 };
 
 const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
-#define MAKE(x, y) [x] = y
+#define MAKE(x, y) [x] = { y }
         MAKE( BINOP_EQ, "==" ),
         MAKE( BINOP_NE, "!=" ),
         MAKE( BINOP_LT, "<" ),

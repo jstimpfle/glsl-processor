@@ -13,7 +13,16 @@ static void make_directory_if_not_exists(const char *dirpath)
                 fatal_f("Failed to create directory %s", dirpath);
 }
 #else
-#error Make-Directory function not implemented for this operating system
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+static void make_directory_if_not_exists(const char *dirpath)
+{
+        int r = mkdir(dirpath, 0770);
+        if (r == -1)
+                fatal_f("Failed to create directory %s: %s",
+                        dirpath, strerror(errno));
+}
 #endif
 
 // TODO
@@ -292,8 +301,6 @@ void process_mts(struct Ast *ast)
                                         continue;  // only vertex shaders can contain attributes. Attributes are "in" variables of the vertex shader.
                         }
                         const char *attribName = get_aststring_buffer(ast, decl->name);
-                        int primtypeKind = decl->typeExpr->primtypeKind;
-                        const char *typeName = primtypeKindString[primtypeKind];
                         add_enum_item_3(ctx, "ATTRIBUTE", programName, attribName);
                 }
         }
@@ -400,7 +407,6 @@ void process_mts(struct Ast *ast)
                         struct UniformDecl *decl = get_uniform(&uniformIter);
                         const char *uniformName = get_aststring_buffer(ast, decl->uniDeclName);
                         int typeKind = decl->uniDeclTypeExpr->primtypeKind;  //XXX depending on complicated data structure and bad design. There are no "type exprs"
-                        const char *typeName = primtypeKindString[typeKind];
                         fprintf(ctx->hFileHandle, "static inline void set_uniform_%s_%s", programName, uniformName);
                         const char *fmt;
                         switch (typeKind) {

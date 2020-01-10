@@ -337,11 +337,6 @@ static void parse_simple_token(struct Ctx *ctx, int tokenKind)
         consume_token(ctx);
 }
 
-static void parse_comma(struct Ctx *ctx)
-{
-        parse_simple_token(ctx, TOKEN_COMMA);
-}
-
 static void parse_semicolon(struct Ctx *ctx)
 {
         parse_simple_token(ctx, TOKEN_SEMICOLON);
