@@ -93,10 +93,14 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
 
 static void append_to_buffer_fv(struct MemoryBuffer *handle, const char *fmt, va_list ap)
 {
-        //XXX are we allowed to use "ap" twice?
+        /* We're not allowed to use "ap" twice, and on gcc using it twice
+        actually resulted in a segfault. So we make a backup copy before giving
+        it to vsnprintf(). */
+        va_list ap2;
+        va_copy(ap2, ap);
         size_t need = vsnprintf(NULL, 0, fmt, ap);
         REALLOC_MEMORY(&handle->data, handle->length + need + 1);
-        vsnprintf(handle->data + handle->length, need + 1, fmt, ap);
+        vsnprintf(handle->data + handle->length, need + 1, fmt, ap2);
         handle->data[handle->length + need] = '\0';
         handle->length += need;
 }
