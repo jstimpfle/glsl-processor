@@ -56,12 +56,13 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
         int different = 0;
         {
                 FILE *f = fopen(filepath, "rb");
-                if (f == NULL) {
+                if (f == NULL)
                         different = 1;
-                }
                 else {
                         fseek(f, 0, SEEK_END);
-                        size_t contentsLength = ftell(f);
+                        long contentsLength = ftell(f);
+                        if (contentsLength == -1)
+                                fatal_f("Failed to ftell() file '%s': %s", filepath, strerror(errno));
                         if (contentsLength != handle->length)
                                 different = 1;
                         else {
@@ -69,9 +70,8 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
                                 char *contents;
                                 ALLOC_MEMORY(&contents, contentsLength + 1);
                                 size_t readBytes = fread(contents, 1, contentsLength + 1, f);
-                                if (readBytes != contentsLength) {
+                                if (readBytes != contentsLength)
                                         fatal_f("File '%s' seems to have changed during the commit");
-                                }
                                 if (memcmp(contents, handle->data, handle->length) != 0)
                                         different = 1;
                                 FREE_MEMORY(&contents);
@@ -107,14 +107,6 @@ static void append_to_buffer_f(struct MemoryBuffer *handle, const char *fmt, ...
         va_start(ap, fmt);
         append_to_buffer_fv(handle, fmt, ap);
         va_end(ap);
-}
-
-static FILE *create_or_truncate_file_and_open_for_writing(const char *filepath)
-{
-        FILE *f = fopen(filepath, "wb");
-        if (f == NULL)
-                fatal_f("failed to open file for writing: %s", filepath);
-        return f;
 }
 
 struct LinkedShaderIterator {
