@@ -376,7 +376,6 @@ static struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
                 consume_token(ctx);
                 while (!look_token_kind(ctx, TOKEN_RIGHTBRACE)) {
                         //XXX ignoreing stuff for now
-                        message_f("HERE!");
                         parse_typeexpr(ctx);
                         parse_name(ctx);
                         parse_semicolon(ctx);
