@@ -5,6 +5,7 @@
 #include <glsl-processor/parselinkerfile.h>
 #include <glsl-processor/process.h>
 #include <stdio.h>
+#include <string.h>
 
 struct FileToRead {
         const char *fileContents;
@@ -23,9 +24,9 @@ static void read_file(const char *filepath, struct FileToRead *out)
         //message_f("File size is %d bytes", fileSize);
         fseek(fileHandle, 0, SEEK_SET);
         ALLOC_MEMORY(&fileContents, fileSize + 1);
-        size_t r = fread(fileContents, fileSize, 1, fileHandle);
-        if (r != 1)
-                fatal_f("Error reading file %s", filepath);
+        size_t r = fread(fileContents, 1, fileSize + 1, fileHandle);
+        if (r != fileSize)
+                fatal_f("Error reading file %s: %d", filepath);
         fclose(fileHandle);
 
         out->fileContents = fileContents;
@@ -58,12 +59,13 @@ static int find_shader_index(struct Ast *ast, const char *shaderName)
 
 int main(int argc, const char **argv)
 {
-        if (argc != 2) {
-                message_f("Usage: glsl-processor <linker-file>");
+        if (argc != 3) {
+                message_f("Usage: glsl-processor <linker-file> <out-dir>");
                 return 1;
         }
 
         const char *linkerFilepath = argv[1];
+        const char *outDirpath = argv[2];
 
         struct Ast ast;
         struct Ctx ctx;
@@ -95,8 +97,8 @@ int main(int argc, const char **argv)
 
         process_ast(&ast);
 
-        extern void process_mts(struct Ast *ast);
-        process_mts(&ast);
+        extern void write_c_interface(struct Ast *ast, const char *autogenDir);
+        write_c_interface(&ast, outDirpath);
 
         teardown_ctx(&ctx);
         teardown_ast(&ast);
