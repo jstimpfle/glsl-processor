@@ -424,6 +424,7 @@ static struct UniformDecl *parse_uniform(struct Ctx *ctx)
         struct UniformDecl *uniformDecl = create_uniformdecl(ctx->ast);
         uniformDecl->uniDeclName = name;
         uniformDecl->uniDeclTypeExpr = typeExpr;
+        //printf("parse uniform (%s) %s %s\n", ctx->filepath, get_aststring_buffer(ctx->ast, name), primtypeKindString[typeExpr->primtypeKind]);
         return uniformDecl;
 }
 

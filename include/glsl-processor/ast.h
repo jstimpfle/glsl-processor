@@ -242,6 +242,19 @@ struct LinkItem {
         int resolvedShaderIndex;
 };
 
+
+struct ProgramUniform {
+        int programIndex;
+        int typeKind;
+        const char *uniformName;
+};
+
+struct ProgramAttribute {
+        int programIndex;
+        int typeKind;
+        const char *attributeName;
+};
+
 struct Ast {
         struct ProgramDecl *programDecls;
         struct ShaderDecl *shaderDecls;
@@ -257,6 +270,15 @@ struct Ast {
 
         // TODO: think about allocation strategy...
         struct AstString *astStrings;
+
+        // this stuff here is completely computed from the parsed data.
+        // It's about time now that we rename this structure from "Ast"
+        // to something better suited.
+        struct ProgramUniform *programUniforms;
+        struct ProgramAttribute *programAttributes;
+
+        int numProgramUniforms;
+        int numProgramAttributes;
 };
 
 

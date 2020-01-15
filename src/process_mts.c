@@ -113,165 +113,6 @@ static void append_to_buffer_f(struct MemoryBuffer *handle, const char *fmt, ...
         va_end(ap);
 }
 
-struct LinkedShaderIterator {
-        struct Ast *ast;
-        int programIndex;
-        int linkIndex;
-};
-
-static void begin_iterating_linked_shaders(struct LinkedShaderIterator *iter, struct Ast *ast, int programIndex)
-{
-        iter->ast = ast;
-        iter->programIndex = programIndex;
-        iter->linkIndex = 0;
-        while (iter->linkIndex < ast->numLinkItems && ast->linkItems[iter->linkIndex].resolvedProgramIndex != programIndex)
-                iter->linkIndex++;
-}
-
-static int have_linked_shader(struct LinkedShaderIterator *iter)
-{
-        return iter->linkIndex < iter->ast->numLinkItems;
-}
-
-static void go_to_next_linked_shader(struct LinkedShaderIterator *iter)
-{
-        ENSURE(iter->linkIndex < iter->ast->numLinkItems);
-        iter->linkIndex++;
-        while (iter->linkIndex < iter->ast->numLinkItems && iter->ast->linkItems[iter->linkIndex].resolvedProgramIndex != iter->programIndex)
-                iter->linkIndex++;
-}
-
-static int get_linked_shader(struct LinkedShaderIterator *iter)
-{
-        ENSURE(iter->linkIndex < iter->ast->numLinkItems);
-        return iter->ast->linkItems[iter->linkIndex].resolvedShaderIndex;
-}
-
-struct UniformIterator {
-        struct LinkedShaderIterator shaderIter;
-        struct Ast *ast;
-        struct ShaderfileAst *fa;
-        int toplevelNodeIndex;
-};
-
-static int have_uniform(struct UniformIterator *iter)
-{
-        if (iter->fa != NULL) {
-                ENSURE(iter->toplevelNodeIndex < iter->fa->numToplevelNodes);
-                ENSURE(iter->fa->toplevelNodes[iter->toplevelNodeIndex]->directiveKind == DIRECTIVE_UNIFORM);
-        }
-        return iter->fa != NULL;
-}
-
-static void go_to_next_uniform(struct UniformIterator *iter)
-{
-        ENSURE(iter->fa != NULL);  // because we shouldn't be called otherwise
-        ENSURE(iter->toplevelNodeIndex < iter->fa->numToplevelNodes);  // because, if iter->fa != NULL, the toplevelNodeIndex should be valid.
-        iter->toplevelNodeIndex++;
-        for (;;) {
-                while (iter->toplevelNodeIndex < iter->fa->numToplevelNodes && iter->fa->toplevelNodes[iter->toplevelNodeIndex]->directiveKind != DIRECTIVE_UNIFORM)
-                        iter->toplevelNodeIndex++;
-                if (iter->toplevelNodeIndex < iter->fa->numToplevelNodes)
-                        break;
-                go_to_next_linked_shader(&iter->shaderIter);
-                if (!have_linked_shader(&iter->shaderIter)) {
-                        iter->fa = NULL;
-                        break;
-                }
-                int shaderIndex = get_linked_shader(&iter->shaderIter);
-                iter->fa = &iter->ast->shaderfileAsts[shaderIndex];
-                iter->toplevelNodeIndex = 0;
-        }
-}
-
-static void begin_iterating_uniforms(struct UniformIterator *iter, struct Ast *ast, int programIndex)
-{
-        begin_iterating_linked_shaders(&iter->shaderIter, ast, programIndex);
-        iter->ast = ast;
-        iter->fa = NULL;
-        iter->toplevelNodeIndex = -1337;
-        if (have_linked_shader(&iter->shaderIter)) {
-                int shaderIndex = get_linked_shader(&iter->shaderIter);
-                iter->fa = &iter->ast->shaderfileAsts[shaderIndex];
-                iter->toplevelNodeIndex = 0;
-                // code to find first uniform.
-                // very ugly code, trying to avoid duplication. There must be a better way
-                if (iter->toplevelNodeIndex == iter->fa->numToplevelNodes
-                        || iter->fa->toplevelNodes[iter->toplevelNodeIndex]->directiveKind != DIRECTIVE_UNIFORM)
-                        go_to_next_uniform(iter);
-        }
-}
-
-static struct UniformDecl *get_uniform(struct UniformIterator *iter)
-{
-        ENSURE(have_uniform(iter));
-        return iter->fa->toplevelNodes[iter->toplevelNodeIndex]->data.tUniform;
-}
-
-
-
-struct VariableIterator {
-        struct LinkedShaderIterator shaderIter;
-        struct Ast *ast;
-        struct ShaderfileAst *fa;
-        int toplevelNodeIndex;
-};
-
-static int have_variable(struct VariableIterator *iter)
-{
-        if (iter->fa != NULL) {
-                ENSURE(iter->toplevelNodeIndex < iter->fa->numToplevelNodes);
-                ENSURE(iter->fa->toplevelNodes[iter->toplevelNodeIndex]->directiveKind == DIRECTIVE_VARIABLE);
-        }
-        return iter->fa != NULL;
-}
-
-static void go_to_next_variable(struct VariableIterator *iter)
-{
-        ENSURE(iter->fa != NULL);  // because we shouldn't be called otherwise
-        ENSURE(iter->toplevelNodeIndex < iter->fa->numToplevelNodes);  // because, if iter->fa != NULL, the toplevelNodeIndex should be valid.
-        iter->toplevelNodeIndex++;
-        for (;;) {
-                while (iter->toplevelNodeIndex < iter->fa->numToplevelNodes && iter->fa->toplevelNodes[iter->toplevelNodeIndex]->directiveKind != DIRECTIVE_VARIABLE)
-                        iter->toplevelNodeIndex++;
-                if (iter->toplevelNodeIndex < iter->fa->numToplevelNodes)
-                        break;
-                go_to_next_linked_shader(&iter->shaderIter);
-                if (!have_linked_shader(&iter->shaderIter)) {
-                        iter->fa = NULL;
-                        break;
-                }
-                int shaderIndex = get_linked_shader(&iter->shaderIter);
-                iter->fa = &iter->ast->shaderfileAsts[shaderIndex];
-                iter->toplevelNodeIndex = 0;
-        }
-}
-
-static void begin_iterating_variables(struct VariableIterator *iter, struct Ast *ast, int programIndex)
-{
-        begin_iterating_linked_shaders(&iter->shaderIter, ast, programIndex);
-        iter->ast = ast;
-        iter->fa = NULL;
-        iter->toplevelNodeIndex = -1337;
-        if (have_linked_shader(&iter->shaderIter)) {
-                int shaderIndex = get_linked_shader(&iter->shaderIter);
-                iter->fa = &iter->ast->shaderfileAsts[shaderIndex];
-                iter->toplevelNodeIndex = 0;
-                // code to find first uniform.
-                // very ugly code, trying to avoid duplication. There must be a better way
-                if (iter->toplevelNodeIndex == iter->fa->numToplevelNodes
-                        || iter->fa->toplevelNodes[iter->toplevelNodeIndex]->directiveKind != DIRECTIVE_VARIABLE)
-                        go_to_next_variable(iter);
-        }
-}
-
-static struct VariableDecl *get_variable(struct VariableIterator *iter)
-{
-        ENSURE(have_variable(iter));
-        return iter->fa->toplevelNodes[iter->toplevelNodeIndex]->data.tVariable;
-}
-
-
 
 static void begin_enum(struct MtsCtx *ctx)
 {
@@ -349,42 +190,22 @@ void process_mts(struct Ast *ast)
         add_enum_item(ctx, "NUM_SHADER_KINDS");
         end_enum(ctx);
 
-        //XXX: too much code here
         begin_enum(ctx);
-        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+        for (int i = 0; i < ast->numProgramUniforms; i++) {
+                int programIndex = ast->programUniforms[i].programIndex;
                 const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
-                struct UniformIterator uniformIter;
-                for (begin_iterating_uniforms(&uniformIter, ast, programIndex);
-                        have_uniform(&uniformIter); go_to_next_uniform(&uniformIter))
-                {
-                        struct UniformDecl *decl = get_uniform(&uniformIter);
-                        const char *uniformName = get_aststring_buffer(ast, decl->uniDeclName);
-                        add_enum_item_3(ctx, "UNIFORM", programName, uniformName);
-                }
+                const char *uniformName = ast->programUniforms[i].uniformName;
+                add_enum_item_3(ctx, "UNIFORM", programName, uniformName);
         }
         add_enum_item(ctx, "NUM_UNIFORM_KINDS");
         end_enum(ctx);
 
-        //XXX: too much code here
         begin_enum(ctx);
-        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+        for (int i = 0; i < ast->numProgramAttributes; i++) {
+                int programIndex = ast->programAttributes[i].programIndex;
                 const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
-                struct VariableIterator variableIter;
-                for (begin_iterating_variables(&variableIter, ast, programIndex);
-                        have_variable(&variableIter); go_to_next_variable(&variableIter))
-                {
-                        struct VariableDecl *decl = get_variable(&variableIter);
-                        if (decl->inOrOut != 0) /* TODO: enum for this. 0 == IN direction */
-                                continue;
-                        { // this code is too complex. It should be easier to determine the shader type.
-                                int shaderIndex = ast->linkItems[variableIter.shaderIter.linkIndex].resolvedShaderIndex;
-                                int shaderType = ast->shaderDecls[shaderIndex].shaderType;
-                                if (shaderType != SHADERTYPE_VERTEX)
-                                        continue;  // only vertex shaders can contain attributes. Attributes are "in" variables of the vertex shader.
-                        }
-                        const char *attribName = get_aststring_buffer(ast, decl->name);
-                        add_enum_item_3(ctx, "ATTRIBUTE", programName, attribName);
-                }
+                const char *attributeName = ast->programAttributes[i].attributeName;
+                add_enum_item_3(ctx, "ATTRIBUTE", programName, attributeName);
         }
         add_enum_item(ctx, "NUM_ATTRIBUTE_KINDS");
         end_enum(ctx);
@@ -437,46 +258,29 @@ void process_mts(struct Ast *ast)
         append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
 
         append_to_buffer_f(&ctx->cFileHandle, "const struct SM_UniformInfo smUniformInfo[NUM_UNIFORM_KINDS] = {\n");
-        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+
+        for (int i = 0; i < ast->numProgramUniforms; i++) {
+                int programIndex = ast->programUniforms[i].programIndex;
+                int primtypeKind = ast->programUniforms[i].typeKind;
                 const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
-                struct UniformIterator uniformIter;
-                for (begin_iterating_uniforms(&uniformIter, ast, programIndex);
-                        have_uniform(&uniformIter); go_to_next_uniform(&uniformIter))
-                {
-                        struct UniformDecl *decl = get_uniform(&uniformIter);
-                        const char *uniformName = get_aststring_buffer(ast, decl->uniDeclName);
-                        int primtypeKind = decl->uniDeclTypeExpr->primtypeKind;  //XXX depending on complicated data structure and bad design. There are no "type exprs"
-                        const char *typeName = PRIMTYPE_to_GRAFIKUNIFORMTYPE[primtypeKind];
-                        ENSURE(typeName != NULL);
-                        append_to_buffer_f(&ctx->cFileHandle, INDENT "[UNIFORM_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
-                                programName, uniformName, programName, typeName, uniformName);
-                }
+                const char *uniformName = ast->programUniforms[i].uniformName;
+                const char *typeName = PRIMTYPE_to_GRAFIKUNIFORMTYPE[primtypeKind];
+                ENSURE(typeName != NULL);
+                append_to_buffer_f(&ctx->cFileHandle, INDENT "[UNIFORM_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
+                        programName, uniformName, programName, typeName, uniformName);
         }
         append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
 
         append_to_buffer_f(&ctx->cFileHandle, "const struct SM_AttributeInfo smAttributeInfo[NUM_ATTRIBUTE_KINDS] = {\n");
-        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+        for (int i = 0; i < ast->numProgramAttributes; i++) {
+                int programIndex = ast->programAttributes[i].programIndex;
+                int primtypeKind = ast->programAttributes[i].typeKind;
                 const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
-                struct VariableIterator variableIter;
-                for (begin_iterating_variables(&variableIter, ast, programIndex);
-                        have_variable(&variableIter); go_to_next_variable(&variableIter))
-                {
-                        struct VariableDecl *decl = get_variable(&variableIter);
-                        if (decl->inOrOut != 0) /* TODO: enum for this. 0 == IN direction */
-                                continue;
-                        { // this code is too complex. It should be easier to determine the shader type.
-                                int shaderIndex = ast->linkItems[variableIter.shaderIter.linkIndex].resolvedShaderIndex;
-                                int shaderType = ast->shaderDecls[shaderIndex].shaderType;
-                                if (shaderType != SHADERTYPE_VERTEX)
-                                        continue;  // only vertex shaders can contain attributes. Attributes are "in" variables of the vertex shader.
-                        }
-                        const char *attribName = get_aststring_buffer(ast, decl->name);
-                        int primtypeKind = decl->typeExpr->primtypeKind;
-                        const char *typeName = PRIMTYPE_to_GRAFIKATTRIBUTETYPE[primtypeKind];
-                        ENSURE(typeName != NULL);
-                        append_to_buffer_f(&ctx->cFileHandle, INDENT "[ATTRIBUTE_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
-                                programName, attribName, programName, typeName, attribName);
-                }
+                const char *attributeName = ast->programAttributes[i].attributeName;
+                const char *typeName = PRIMTYPE_to_GRAFIKATTRIBUTETYPE[primtypeKind];
+                ENSURE(typeName != NULL);
+                append_to_buffer_f(&ctx->cFileHandle, INDENT "[ATTRIBUTE_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
+                        programName, attributeName, programName, typeName, attributeName);
         }
         append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
 
@@ -519,63 +323,60 @@ void process_mts(struct Ast *ast)
                 "};\n\n"
         );
 
-        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+        for (int i = 0; i < ast->numProgramUniforms; i++) {
+                int programIndex = ast->programUniforms[i].programIndex;
+                int primtypeKind = ast->programUniforms[i].typeKind;
                 const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
-                append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
-                struct UniformIterator uniformIter;
-                for (begin_iterating_uniforms(&uniformIter, ast, programIndex);
-                        have_uniform(&uniformIter); go_to_next_uniform(&uniformIter))
-                {
-                        struct UniformDecl *decl = get_uniform(&uniformIter);
-                        const char *uniformName = get_aststring_buffer(ast, decl->uniDeclName);
-                        int typeKind = decl->uniDeclTypeExpr->primtypeKind;  //XXX depending on complicated data structure and bad design. There are no "type exprs"
-                        append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_set_%s", programName, uniformName);
-                        const char *fmt;
-                        switch (typeKind) {
-                        case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
-                        case PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
-                        case PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
-                        case PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
-                        case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
-                        case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
-                        case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
-                        case PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
-                        default: fatal_f("Not implemented!");
-                        }
-                        append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
+                if (i == 0 || programIndex != ast->programUniforms[i - 1].programIndex) {
+                        append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
+                        append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_primitive_with_GfxProgram(gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
                 }
+                const char *uniformName = ast->programUniforms[i].uniformName;
+                append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_set_%s", programName, uniformName);
+                const char *fmt;
+                switch (primtypeKind) {
+                case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
+                case PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
+                case PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
+                case PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
+                case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
+                case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
+                case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                case PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
+                default: fatal_f("Not implemented!");
+                }
+                append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
         }
 
         append_to_buffer_f(&ctx->hFileHandle,
                 "\n"
                 "\n"
                 "#ifdef __cplusplus\n\n");
-        for (int programIndex = 0; programIndex < ast->numPrograms; programIndex++) {
+        for (int i = 0; i < ast->numProgramUniforms; i++) {
+                int programIndex = ast->programUniforms[i].programIndex;
+                int primtypeKind = ast->programUniforms[i].typeKind;
                 const char *programName = get_aststring_buffer(ast, ast->programDecls[programIndex].programName);
-                struct UniformIterator uniformIter;
-                append_to_buffer_f(&ctx->hFileHandle, "static struct {\n");
-                append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
-                for (begin_iterating_uniforms(&uniformIter, ast, programIndex);
-                        have_uniform(&uniformIter); go_to_next_uniform(&uniformIter))
-                {
-                        struct UniformDecl *decl = get_uniform(&uniformIter);
-                        const char *uniformName = get_aststring_buffer(ast, decl->uniDeclName);
-                        int typeKind = decl->uniDeclTypeExpr->primtypeKind;  //XXX depending on complicated data structure and bad design. There are no "type exprs"
-                        append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void set_%s", uniformName);
-                        const char *fmt;
-                        switch (typeKind) {
-                        case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
-                        case PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
-                        case PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
-                        case PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
-                        case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
-                        case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
-                        case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
-                        default: fatal_f("Not implemented!");
-                        }
-                        append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
+                const char *uniformName = ast->programUniforms[i].uniformName;
+                if (i == 0 || programIndex != ast->programUniforms[i - 1].programIndex) {
+                        append_to_buffer_f(&ctx->hFileHandle, "static struct {\n");
+                        append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
+                        append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(int gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
                 }
-                append_to_buffer_f(&ctx->hFileHandle, "} %sShader;\n\n", programName);
+                append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void set_%s", uniformName);
+                const char *fmt;
+                switch (primtypeKind) {
+                case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
+                case PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
+                case PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
+                case PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
+                case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
+                case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
+                case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                default: fatal_f("Not implemented!");
+                }
+                append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
+                if (i + 1 == ast->numProgramUniforms || programIndex != ast->programUniforms[i + 1].programIndex)
+                        append_to_buffer_f(&ctx->hFileHandle, "} %sShader;\n\n", programName);
         }
         append_to_buffer_f(&ctx->hFileHandle, "#endif // #ifdef __cplusplus\n\n");
 
