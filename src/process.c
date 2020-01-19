@@ -120,8 +120,30 @@ int compare_ProgramAttributes(const void *a, const void *b)
         return strcmp(x->attributeName, y->attributeName);
 }
 
+static int find_program_index(struct Ast *ast, const char *programName)
+{
+        for (int i = 0; i < ast->numShaders; i++)
+                if (!strcmp(programName, get_aststring_buffer(ast, ast->programDecls[i].programName)))
+                        return i;
+        fatal_f("Referenced Shader does not exist: %s", programName);
+}
+
+static int find_shader_index(struct Ast *ast, const char *shaderName)
+{
+        for (int i = 0; i < ast->numShaders; i++)
+                if (!strcmp(shaderName, get_aststring_buffer(ast, ast->shaderDecls[i].shaderName)))
+                        return i;
+        fatal_f("Referenced Shader does not exist: %s", shaderName);
+}
+
 void process_ast(struct Ast *ast)
 {
+        for (int i = 0; i < ast->numLinkItems; i++) {
+                AstString programName = ast->linkItems[i].programName;
+                AstString shaderName = ast->linkItems[i].shaderName;
+                ast->linkItems[i].resolvedProgramIndex = find_program_index(ast, get_aststring_buffer(ast, programName));
+                ast->linkItems[i].resolvedShaderIndex = find_shader_index(ast, get_aststring_buffer(ast, shaderName));
+        }
         for (int i = 0; i < ast->numFiles; i++) {
                 struct ShaderfileAst *fa = &ast->shaderfileAsts[i];
                 for (int j = 0; j < fa->numToplevelNodes; j++) {

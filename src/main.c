@@ -33,30 +33,6 @@ static void read_file(const char *filepath, struct FileToRead *out)
         out->fileSize = fileSize;
 }
 
-void parse_file(struct Ctx *ctx, const char *filepath)
-{
-        struct FileToRead readtFile;
-        read_file(filepath, &readtFile);
-        parse_next_file(ctx, filepath, readtFile.fileContents, readtFile.fileSize);
-        // TODO: when should we dispose the file buffer?
-}
-
-static int find_program_index(struct Ast *ast, const char *programName)
-{
-        for (int i = 0; i < ast->numShaders; i++)
-                if (!strcmp(programName, get_aststring_buffer(ast, ast->programDecls[i].programName)))
-                        return i;
-        fatal_f("Referenced Shader does not exist: %s", programName);
-}
-
-static int find_shader_index(struct Ast *ast, const char *shaderName)
-{
-        for (int i = 0; i < ast->numShaders; i++)
-                if (!strcmp(shaderName, get_aststring_buffer(ast, ast->shaderDecls[i].shaderName)))
-                        return i;
-        fatal_f("Referenced Shader does not exist: %s", shaderName);
-}
-
 int main(int argc, const char **argv)
 {
         if (argc != 3) {
@@ -84,15 +60,10 @@ int main(int argc, const char **argv)
         for (int i = 0; i < ctx.ast->numShaders; i++) {
                 struct ShaderDecl *shaderDecl = &ctx.ast->shaderDecls[i];
                 const char *filepath = get_aststring_buffer(ctx.ast, shaderDecl->shaderFilepath);
-                parse_file(&ctx, filepath);
-        }
-
-        /* resolve all references */
-        for (int i = 0; i < ast.numLinkItems; i++) {
-                AstString programName = ast.linkItems[i].programName;
-                AstString shaderName = ast.linkItems[i].shaderName;
-                ast.linkItems[i].resolvedProgramIndex = find_program_index(&ast, get_aststring_buffer(&ast, programName));
-                ast.linkItems[i].resolvedShaderIndex = find_shader_index(&ast, get_aststring_buffer(&ast, shaderName));
+                struct FileToRead readtFile;
+                read_file(filepath, &readtFile);
+                parse_next_file(&ctx, filepath, readtFile.fileContents, readtFile.fileSize);
+                // TODO: when should we dispose the file buffer?
         }
 
         process_ast(&ast);
