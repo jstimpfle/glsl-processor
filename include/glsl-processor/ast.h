@@ -23,6 +23,10 @@ enum {
         TOKEN_PERCENT,
         TOKEN_EQUALS,
         TOKEN_DOUBLEEQUALS,
+        TOKEN_PLUSEQUALS,
+        TOKEN_MINUSEQUALS,
+        TOKEN_STAREQUALS,
+        TOKEN_SLASHEQUALS,
         TOKEN_NE,
         TOKEN_LT,
         TOKEN_LE,
@@ -38,6 +42,7 @@ enum {
 
 enum {
         UNOP_NOT,
+        UNOP_NEGATE,
         NUM_UNOP_KINDS,
 };
 
@@ -54,6 +59,10 @@ enum {
         BINOP_DIV,
         BINOP_MOD,
         BINOP_ASSIGN,
+        BINOP_PLUSASSIGN,
+        BINOP_MINUSASSIGN,
+        BINOP_MULASSIGN,
+        BINOP_DIVASSIGN,
         BINOP_BITAND,
         BINOP_BITOR,
         BINOP_LOGICALAND,
@@ -67,7 +76,11 @@ enum {
 };
 
 enum {
+        PRIMTYPE_BOOL,
+        PRIMTYPE_INT,
+        PRIMTYPE_UINT,
         PRIMTYPE_FLOAT,
+        PRIMTYPE_DOUBLE,
         PRIMTYPE_VEC2,
         PRIMTYPE_VEC3,
         PRIMTYPE_VEC4,

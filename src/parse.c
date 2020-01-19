@@ -100,10 +100,6 @@ static const struct {
         { '.', TOKEN_DOT },
         { ',', TOKEN_COMMA },
         { ';', TOKEN_SEMICOLON },
-        { '+', TOKEN_PLUS },
-        { '-', TOKEN_MINUS },
-        { '*', TOKEN_STAR },
-        { '/', TOKEN_SLASH },
         { '%', TOKEN_PERCENT },
         { '!', TOKEN_NOT },
 };
@@ -119,6 +115,10 @@ static const struct {
         { '=', '=', TOKEN_EQUALS, TOKEN_DOUBLEEQUALS },
         { '&', '&', TOKEN_AMPERSAND, TOKEN_DOUBLEAMPERSAND },
         { '|', '|', TOKEN_PIPE, TOKEN_DOUBLEPIPE },
+        { '+', '=', TOKEN_PLUS, TOKEN_PLUSEQUALS },
+        { '-', '=', TOKEN_MINUS, TOKEN_MINUSEQUALS },
+        { '*', '=', TOKEN_STAR, TOKEN_STAREQUALS },
+        { '/', '=', TOKEN_SLASH, TOKEN_SLASHEQUALS },
 };
 
 int look_token(struct Ctx *ctx)
@@ -383,7 +383,7 @@ static struct TypeExpr *parse_typeexpr(struct Ctx *ctx)
                 consume_token(ctx);
                 return NULL;
         }
-        fatal_parse_error_f(ctx, "type expected or interface block was expected...");
+        fatal_parse_error_f(ctx, "type expected or interface block was expected, got: %s", ctx->tokenBuffer);
 }
 
 static struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
@@ -443,12 +443,18 @@ static void parse_expression(struct Ctx *ctx)
                 parse_expression(ctx);
                 parse_simple_token(ctx, TOKEN_RIGHTPAREN);
         }
-        else if (ctx->tokenKind == TOKEN_NOT) {
-                consume_token(ctx);
-                parse_expression(ctx);
-        }
         else {
+                /* unary operator? */
+                for (int i = 0; i < NUM_UNOP_KINDS; i++) {
+                        if (unopTokenInfo[i].tokenKind == ctx->tokenKind) {
+                                consume_token(ctx);
+                                parse_expression(ctx);
+                                goto ok;
+                        }
+                }
                 fatal_parse_error_f(ctx, "Expected expression");
+ok:
+                ;
         }
         for (;;) {
                 // function call?

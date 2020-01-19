@@ -24,6 +24,10 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_PERCENT ),
         ENUM_KIND_STRING( TOKEN_EQUALS ),
         ENUM_KIND_STRING( TOKEN_DOUBLEEQUALS ),
+        ENUM_KIND_STRING( TOKEN_PLUSEQUALS ),
+        ENUM_KIND_STRING( TOKEN_MINUSEQUALS ),
+        ENUM_KIND_STRING( TOKEN_STAREQUALS ),
+        ENUM_KIND_STRING( TOKEN_SLASHEQUALS ),
         ENUM_KIND_STRING( TOKEN_NE ),
         ENUM_KIND_STRING( TOKEN_LT ),
         ENUM_KIND_STRING( TOKEN_LE ),
@@ -38,10 +42,12 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
 
 const struct UnopInfo unopInfo[NUM_UNOP_KINDS] = {
         [UNOP_NOT] = { "!" },
+        [UNOP_NEGATE] = { "-" },
 };
 
 const struct UnopTokenInfo unopTokenInfo[] = {
         { TOKEN_NOT, UNOP_NOT },
+        { TOKEN_MINUS, UNOP_NEGATE },
 };
 
 const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
@@ -58,6 +64,10 @@ const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
         MAKE( BINOP_DIV, "/" ),
         MAKE( BINOP_MOD, "%" ),
         MAKE( BINOP_ASSIGN, "=" ),
+        MAKE( BINOP_PLUSASSIGN, "+=" ),
+        MAKE( BINOP_MINUSASSIGN, "-=" ),
+        MAKE( BINOP_MULASSIGN, "*=" ),
+        MAKE( BINOP_DIVASSIGN, "/=" ),
         MAKE( BINOP_BITAND, "&" ),
         MAKE( BINOP_BITOR, "|" ),
         MAKE( BINOP_LOGICALAND, "&&" ),
@@ -73,6 +83,10 @@ const struct BinopTokenInfo binopTokenInfo[] = {
         { TOKEN_PERCENT, BINOP_MOD },
         { TOKEN_EQUALS, BINOP_ASSIGN },
         { TOKEN_DOUBLEEQUALS, BINOP_EQ },
+        { TOKEN_PLUSEQUALS, BINOP_PLUSASSIGN },
+        { TOKEN_MINUSEQUALS, BINOP_MINUSASSIGN },
+        { TOKEN_STAREQUALS, BINOP_MULASSIGN },
+        { TOKEN_SLASHEQUALS, BINOP_DIVASSIGN },
         { TOKEN_NE, BINOP_NE },
         { TOKEN_LT, BINOP_LT },
         { TOKEN_LE, BINOP_LE },
@@ -89,7 +103,11 @@ const int numBinopTokens = LENGTH(binopTokenInfo);
 
 
 const char *const primtypeString[NUM_PRIMTYPE_KINDS] = {
+        ENUM_TO_STRING( PRIMTYPE_BOOL, "bool" ),
+        ENUM_TO_STRING( PRIMTYPE_INT, "int" ),
+        ENUM_TO_STRING( PRIMTYPE_UINT, "uint" ),
         ENUM_TO_STRING( PRIMTYPE_FLOAT, "float" ),
+        ENUM_TO_STRING( PRIMTYPE_DOUBLE, "double" ),
         ENUM_TO_STRING( PRIMTYPE_VEC2, "vec2" ),
         ENUM_TO_STRING( PRIMTYPE_VEC3, "vec3" ),
         ENUM_TO_STRING( PRIMTYPE_VEC4, "vec4" ),
