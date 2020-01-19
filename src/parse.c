@@ -398,8 +398,24 @@ static struct TypeExpr *parse_type_or_void(struct Ctx *ctx)
         return parse_typeexpr(ctx);
 }
 
-static struct VariableDecl *parse_variable(struct Ctx *ctx, int inOrOut)
+static struct VariableDecl *parse_variable(struct Ctx *ctx)
 {
+        int inOrOut;
+        if (is_keyword(ctx, "flat")) {
+                consume_token(ctx);
+                look_token(ctx);
+        }
+        if (is_keyword(ctx, "in")) {
+                inOrOut = 0;
+        }
+        else if (is_keyword(ctx, "out")) {
+                inOrOut = 1;
+        }
+        else {
+                fatal_parse_error_f(ctx,
+                        "Invalid token %s, expected 'in' or 'out'",
+                        ctx->tokenBuffer);
+        }
         consume_token(ctx); // "in" or "out"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
         // XXX WARNING currently parse_typeexpr() may return NULL, which means that this was an interface block. Is it safe to proceed?
@@ -622,15 +638,12 @@ static void parse(struct Ctx *ctx)
                         node->directiveKind = DIRECTIVE_UNIFORM;
                         node->data.tUniform = parse_uniform(ctx);
                 }
-                else if (is_keyword(ctx, "in")) {
+                else if (is_keyword(ctx, "in")
+                         || is_keyword(ctx, "out")
+                         || is_keyword(ctx, "flat")) {
                         struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
                         node->directiveKind = DIRECTIVE_VARIABLE;
-                        node->data.tVariable = parse_variable(ctx, 0);
-                }
-                else if (is_keyword(ctx, "out")) {
-                        struct ToplevelNode *node = add_new_toplevel_node(ctx->ast);
-                        node->directiveKind = DIRECTIVE_VARIABLE;
-                        node->data.tVariable = parse_variable(ctx, 1);
+                        node->data.tVariable = parse_variable(ctx);
                 }
                 else if (ctx->tokenKind == TOKEN_NAME) {
                         parse_FuncDefn_or_FuncDecl(ctx);
