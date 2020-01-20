@@ -1,6 +1,7 @@
 #include <glsl-processor/defs.h>
 #include <glsl-processor/ast.h>
 #include <glsl-processor/logging.h>
+#include <glsl-processor/api.h>
 #include <glsl-processor/parselinkerfile.h>
 
 enum {
@@ -26,6 +27,7 @@ static const char *const shadertypeKeywords[NUM_SHADERTYPE_KINDS] = {
 
 struct LinkerReadCtx {
         struct Ast *ast;  // TODO: initialize this
+        struct SP_Ctx sp;
         const char *filepath;
         const char *fileContents;
         int fileSize;
@@ -198,21 +200,20 @@ static void parse_token_kind(struct LinkerReadCtx *ctx, int tokenKind)
         consume_linker_token(ctx);
 }
 
-static AstString parse_name(struct LinkerReadCtx *ctx)
+static char *parse_name(struct LinkerReadCtx *ctx)
 {
         if (!look_linker_token(ctx))
                 fatal_linkerread_f(ctx,
                         "Expected a name");
-        AstString name = create_aststring(ctx->ast, ctx->tokenBuffer);
+        char *name = create_aststring(ctx->ast, ctx->tokenBuffer);
         consume_linker_token(ctx);
         return name;
 }
 
-// for now, string literals are represented as AstString's
-static AstString parse_string(struct LinkerReadCtx *ctx)
+static char *parse_string(struct LinkerReadCtx *ctx)
 {
         expect_token_kind(ctx, LINKTOKEN_STRING);
-        AstString str = create_aststring(ctx->ast, ctx->tokenBuffer);
+        char *str = create_aststring(ctx->ast, ctx->tokenBuffer);
         consume_linker_token(ctx);
         return str;
 }
@@ -233,37 +234,28 @@ static int parse_shader_type(struct LinkerReadCtx *ctx)
 static void parse_program_stmt(struct LinkerReadCtx *ctx)
 {
         consume_linker_token(ctx); // "program"
-        AstString programName = parse_name(ctx);
+        char *programName = parse_name(ctx);
         parse_token_kind(ctx, LINKTOKEN_SEMICOLON);
-
-        struct ProgramDecl *programDecl = create_program_decl(ctx->ast);
-        programDecl->programName = programName;
+        sp_create_program(&ctx->sp, programName);
 }
 
 static void parse_shader_stmt(struct LinkerReadCtx *ctx)
 {
         consume_linker_token(ctx); // "shader"
-        AstString shaderName = parse_name(ctx);
+        char *shaderName = parse_name(ctx);
         int shaderType = parse_shader_type(ctx);
-        AstString shaderFilepath = parse_string(ctx);
+        char *shaderFilepath = parse_string(ctx);
         parse_token_kind(ctx, LINKTOKEN_SEMICOLON);
-
-        struct ShaderDecl *shaderDecl = create_shader_decl(ctx->ast);
-        shaderDecl->shaderName = shaderName;
-        shaderDecl->shaderType = shaderType;
-        shaderDecl->shaderFilepath = shaderFilepath;
+        sp_create_shader(&ctx->sp, shaderName, shaderType);
 }
 
 static void parse_link_stmt(struct LinkerReadCtx *ctx)
 {
         consume_linker_token(ctx);  // "link"
-        AstString programName = parse_name(ctx);
-        AstString shaderName = parse_name(ctx);
+        char *programName = parse_name(ctx);
+        char *shaderName = parse_name(ctx);
         parse_token_kind(ctx, LINKTOKEN_SEMICOLON);
-
-        struct LinkItem *linkItem = create_link_item(ctx->ast);
-        linkItem->programName = programName;
-        linkItem->shaderName = shaderName;
+        sp_create_link(&ctx->sp, programName, shaderName);
 }
 
 void parse_linker_file(

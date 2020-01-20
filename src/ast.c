@@ -1,19 +1,16 @@
 #include <glsl-processor/memoryalloc.h>
 #include <glsl-processor/ast.h>
 
-AstString create_aststring(struct Ast *ast, const char *data)
+char *create_aststring(struct Ast *ast, const char *data)
 {
         int length = (int) strlen(data);
-        AstString astString;
-        ALLOC_MEMORY(&astString.data, length + 1);
-        memcpy(astString.data, data, length + 1);
-        return astString;
+        char *string;
+        ALLOC_MEMORY(&string, length + 1);
+        memcpy(string, data, length + 1);
+        return string;
 }
 
 enum {
-        POOL_PROGRAMDECL,
-        POOL_SHADERDECL,
-        POOL_LINKITEM,
         POOL_TYPEEXPR,
         POOL_UNIFORMDECL,
         POOL_VARIABLEDECL,
@@ -24,9 +21,6 @@ enum {
 
 static int poolObjectSize[NUM_POOL_KINDS] = {
 #define MAKE(k, t) [k] = sizeof (t)
-        MAKE(POOL_PROGRAMDECL, struct ProgramDecl),
-        MAKE(POOL_SHADERDECL, struct ShaderDecl),
-        MAKE(POOL_LINKITEM, struct LinkItem),
         MAKE(POOL_UNIFORMDECL, struct UniformDecl),
         MAKE(POOL_VARIABLEDECL, struct VariableDecl),
         MAKE(POOL_TYPEEXPR, struct TypeExpr),
@@ -57,9 +51,6 @@ static void *allocate_pooled_object(struct Ast *ast, int poolKind)
         return &container->arrayMember[idx]; \
 }
 
-DEFINE_ARRAY_ALLOCATOR_FUNCTION(struct ProgramDecl, create_program_decl, struct Ast, numPrograms, programDecls)
-DEFINE_ARRAY_ALLOCATOR_FUNCTION(struct ShaderDecl, create_shader_decl, struct Ast, numShaders, shaderDecls)
-DEFINE_ARRAY_ALLOCATOR_FUNCTION(struct LinkItem, create_link_item, struct Ast, numLinkItems, linkItems)
 DEFINE_ALLOCATOR_FUNCTION(struct TypeExpr, create_typeexpr, POOL_TYPEEXPR)
 DEFINE_ALLOCATOR_FUNCTION(struct UniformDecl, create_uniformdecl, POOL_UNIFORMDECL)
 DEFINE_ALLOCATOR_FUNCTION(struct VariableDecl, create_variabledecl, POOL_VARIABLEDECL)
@@ -77,19 +68,6 @@ struct ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct ShaderfileAst
 struct ToplevelNode *add_new_toplevel_node(struct Ast *ast)
 {
         return add_new_toplevel_node_to_shaderfileast(&ast->shaderfileAsts[ast->currentFileIndex]);
-}
-
-void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath)
-{
-        int index = ast->numFiles ++;
-        REALLOC_MEMORY(&ast->shaderfileAsts, ast->numFiles);
-        struct ShaderfileAst *fa = &ast->shaderfileAsts[index];
-        memset(fa, 0, sizeof *fa);
-        int filepathLength = (int) strlen(filepath);
-        ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
-        memcpy(fa->filepath, filepath, filepathLength + 1);
-        // switch
-        ast->currentFileIndex = index;
 }
 
 void setup_ast(struct Ast *ast)

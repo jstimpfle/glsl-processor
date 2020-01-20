@@ -166,29 +166,29 @@ struct TypeExpr {
 };
 
 struct UniformDecl {
-        AstString uniDeclName;
+        char *uniDeclName;
         struct TypeExpr *uniDeclTypeExpr;
 };
 
 struct VariableDecl {
         int inOrOut;
         struct TypeExpr *typeExpr;
-        AstString name;
+        char *name;
 };
 
 struct FuncDecl {
-        AstString name;
+        char *name;
         struct TypeExpr *returnTypeExpr;
         struct TypeExpr **argTypeExprs;
-        AstString *argNames;
+        char **argNames;
         int numArgs;
 };
 
 struct FuncDefn {
-        AstString name;
+        char *name;
         struct TypeExpr *returnTypeExpr;
         struct TypeExpr **argTypeExprs;
-        AstString *argNames;
+        char **argNames;
         int numArgs;
         Stmt bodyStmt;
 };
@@ -237,48 +237,50 @@ struct ShaderfileAst {
         int numToplevelNodes;
 };
 
-struct ProgramDecl {
-        AstString programName;
+struct FileInfo {
+        char *fileID;
+        char *contents;
+        int size;
 };
 
-struct ShaderDecl {
-        AstString shaderName;
-        int shaderType;  //SHADERTYPE_??
-        AstString shaderFilepath;
+struct ProgramInfo {
+        char *programName;
 };
 
-struct LinkItem {
-        AstString programName;
-        AstString shaderName;
-        // for now, we'll just put these here...
-        int resolvedProgramIndex;
-        int resolvedShaderIndex;
+struct ShaderInfo {
+        char *shaderName;
+        int shaderType;
 };
 
+struct LinkInfo {
+        int programIndex;
+        int shaderIndex;
+};
 
 struct ProgramUniform {
         int programIndex;
         int typeKind;
-        const char *uniformName;
+        char *uniformName;
 };
 
 struct ProgramAttribute {
         int programIndex;
         int typeKind;
-        const char *attributeName;
+        char *attributeName;
 };
 
 struct Ast {
-        struct ProgramDecl *programDecls;
-        struct ShaderDecl *shaderDecls;
-        struct LinkItem *linkItems;
+        struct FileInfo *fileInfo;
+        struct ProgramInfo *programInfo;
+        struct ShaderInfo *shaderInfo;
+        struct LinkInfo *linkInfo;
 
+        int numFiles;
         int numPrograms;
         int numShaders;
-        int numLinkItems;
+        int numLinks;
 
         struct ShaderfileAst *shaderfileAsts;
-        int numFiles;
         int currentFileIndex;  // global state for simpler code
 
         // TODO: think about allocation strategy...
@@ -306,7 +308,7 @@ extern const struct BinopTokenInfo binopTokenInfo[];
 extern const int numUnopToken;
 extern const int numBinopTokens;
 
-AstString create_aststring(struct Ast *ast, const char *string);
+char *create_aststring(struct Ast *ast, const char *string);
 struct TypeExpr *create_typeexpr(struct Ast *ast);
 struct UniformDecl *create_uniformdecl(struct Ast *ast);
 struct VariableDecl *create_variabledecl(struct Ast *ast);
@@ -324,11 +326,5 @@ void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath);
 
 void setup_ast(struct Ast *ast);
 void teardown_ast(struct Ast *ast);
-
-static inline const char *get_aststring_buffer(struct Ast *ast, AstString name)
-{
-        UNUSED(ast);
-        return name.data;
-}
 
 #endif

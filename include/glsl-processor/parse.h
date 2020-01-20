@@ -23,6 +23,6 @@ struct Ctx {
 void setup_ctx(struct Ctx *ctx, struct Ast *ast);
 void teardown_ctx(struct Ctx *ctx);
 
-void parse_next_file(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize);
+void parse_shader(struct Ctx *ctx, int shaderIndex);
 
 #endif

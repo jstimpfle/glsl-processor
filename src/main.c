@@ -1,78 +1,96 @@
-#include <glsl-processor/memoryalloc.h>
+#include <glsl-processor/defs.h>
 #include <glsl-processor/logging.h>
+#include <glsl-processor/memoryalloc.h>
 #include <glsl-processor/ast.h>
-#include <glsl-processor/parse.h>
-#include <glsl-processor/parselinkerfile.h>
+#include <glsl-processor/api.h>
 #include <glsl-processor/process.h>
-#include <stdio.h>
-#include <string.h>
+#include <glsl-processor/write_c_interface.h>
 
-struct FileToRead {
-        const char *fileContents;
-        int fileSize;
+static const struct {
+        const char *extension;
+        int shadertypeKind;
+} shadertypeMap[] = {
+        { "vert", SP_SHADERTYPE_VERTEX },
+        { "frag", SP_SHADERTYPE_FRAGMENT },
 };
 
-static void read_file(const char *filepath, struct FileToRead *out)
-{
-        char *fileContents = NULL;
-        int fileSize;
-        FILE *fileHandle = fopen(filepath, "rb");
-        if (fileHandle == NULL)
-                fatal_f("Failed to open '%s'", filepath);
-        fseek(fileHandle, 0, SEEK_END);
-        fileSize = ftell(fileHandle);
-        //message_f("File size is %d bytes", fileSize);
-        fseek(fileHandle, 0, SEEK_SET);
-        ALLOC_MEMORY(&fileContents, fileSize + 1);
-        size_t r = fread(fileContents, 1, fileSize + 1, fileHandle);
-        if (r != fileSize)
-                fatal_f("Error reading file %s: %d", filepath);
-        fclose(fileHandle);
+const char *const shaders[] = {
+        "line.vert",
+        "line.frag",
+        "circle.vert",
+        "circle.frag",
+        "arc.vert",
+        "arc.frag",
+};
 
-        out->fileContents = fileContents;
-        out->fileSize = fileSize;
-}
+const char *const programs[] = {
+        "line",
+        "circle",
+        "arc",
+};
 
-int main(int argc, const char **argv)
+static const struct {
+        const char *program;
+        const char *shader;
+} links[] = {
+        { "line", "line.vert" },
+        { "line", "line.frag" },
+        { "circle", "circle.vert" },
+        { "circle", "circle.frag" },
+        { "arc", "arc.vert" },
+        { "arc", "arc.frag" },
+};
+
+int main(void)
 {
-        if (argc != 3) {
-                message_f("Usage: glsl-processor <linker-file> <out-dir>");
-                return 1;
+        struct SP_Ctx sp = {0};
+        for (int i = 0; i < LENGTH(shaders); i++) {
+                char filepath[256] = "shaders/";
+                ENSURE(strlen(filepath) + strlen(shaders[i]) + 1 <= LENGTH(filepath));
+                memcpy(filepath + strlen(filepath), shaders[i], strlen(shaders[i]) + 1);
+                FILE *f = fopen(filepath, "rb");
+                if (f == NULL)
+                        fatal_f("Failed to open shader file '%s'", filepath);
+                fseek(f, 0, SEEK_END);
+                long size = ftell(f);
+                char *data;
+                ALLOC_MEMORY(&data, size + 1);
+                fseek(f, 0, SEEK_SET);
+                size_t nread = fread(data, 1, size + 1, f);
+                if (nread != size)
+                        fatal_f("Expected to read %d bytes from '%s', but got %d",
+                                size, filepath, nread);
+                if (ferror(f))
+                        fatal_f("I/O error while reading from '%s'", filepath);
+                fclose(f);
+                sp_create_file(&sp, shaders[i], data, size);
         }
-
-        const char *linkerFilepath = argv[1];
-        const char *outDirpath = argv[2];
-
-        struct Ast ast;
-        struct Ctx ctx;
-
-        setup_ast(&ast);
+        for (int i = 0; i < LENGTH(shaders); i++) {
+                int shadertypeKind = -1;
+                int shadernameLength = strlen(shaders[i]);
+                for (int j = 0; j < LENGTH(shadertypeMap); j++) {
+                        int extensionLength = strlen(shadertypeMap[j].extension);
+                        if (shadernameLength >= extensionLength + 1
+                            && shaders[i][shadernameLength - extensionLength - 1] == '.'
+                            && !strcmp(shaders[i] + shadernameLength - extensionLength, shadertypeMap[j].extension))
+                                shadertypeKind = shadertypeMap[j].shadertypeKind;
+                }
+                if (shadertypeKind == -1)
+                        fatal_f("Invalid shader extension: '%s'", shaders[i]);
+                sp_create_shader(&sp, shaders[i], shadertypeKind);
+        }
+        for (int i = 0; i < LENGTH(programs); i++)
+                sp_create_program(&sp, programs[i]);
+        for (int i = 0; i < LENGTH(links); i++)
+                sp_create_link(&sp, links[i].program, links[i].shader);
+        sp_process(&sp);
+        struct Ast ast = {0};
+        sp_to_ast(&sp, &ast);
+        struct Ctx ctx = {0};
         setup_ctx(&ctx, &ast);
-
-        {
-                struct FileToRead linkerFile;
-                read_file(linkerFilepath, &linkerFile);
-                parse_linker_file(linkerFilepath, linkerFile.fileContents, linkerFile.fileSize, &ast);
-                // TODO: when to dispose file contents?
-        }
-
-        ALLOC_MEMORY(&ctx.ast->shaderfileAsts, ctx.ast->numShaders);
-        for (int i = 0; i < ctx.ast->numShaders; i++) {
-                struct ShaderDecl *shaderDecl = &ctx.ast->shaderDecls[i];
-                const char *filepath = get_aststring_buffer(ctx.ast, shaderDecl->shaderFilepath);
-                struct FileToRead readtFile;
-                read_file(filepath, &readtFile);
-                parse_next_file(&ctx, filepath, readtFile.fileContents, readtFile.fileSize);
-                // TODO: when should we dispose the file buffer?
-        }
-
+        for (int i = 0; i < ctx.ast->numShaders; i++)
+                parse_shader(&ctx, i);
         process_ast(&ast);
-
-        extern void write_c_interface(struct Ast *ast, const char *autogenDir);
-        write_c_interface(&ast, outDirpath);
-
-        teardown_ctx(&ctx);
-        teardown_ast(&ast);
-
+        write_c_interface(&ast, "autogenerated/");
         return 0;
 }

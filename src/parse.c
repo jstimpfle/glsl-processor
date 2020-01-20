@@ -342,11 +342,11 @@ static void parse_semicolon(struct Ctx *ctx)
         parse_simple_token(ctx, TOKEN_SEMICOLON);
 }
 
-static AstString parse_name(struct Ctx *ctx)
+static char *parse_name(struct Ctx *ctx)
 {
         expect_token_kind(ctx, TOKEN_NAME);
         //message_f("name is '%s'", ctx->tokenBuffer);
-        AstString name = create_aststring(ctx->ast, ctx->tokenBuffer);
+        char *name = create_aststring(ctx->ast, ctx->tokenBuffer);
         consume_token(ctx);
         return name;
 }
@@ -419,7 +419,7 @@ static struct VariableDecl *parse_variable(struct Ctx *ctx)
         consume_token(ctx); // "in" or "out"
         struct TypeExpr *typeExpr = parse_typeexpr(ctx);
         // XXX WARNING currently parse_typeexpr() may return NULL, which means that this was an interface block. Is it safe to proceed?
-        AstString name = parse_name(ctx);
+        char *name = parse_name(ctx);
         parse_semicolon(ctx);
         struct VariableDecl *variableDecl = create_variabledecl(ctx->ast);
         variableDecl->inOrOut = inOrOut;
@@ -435,12 +435,12 @@ static struct UniformDecl *parse_uniform(struct Ctx *ctx)
         // currently parse_typeexpr may return NULL, but this is not valid for uniforms.
         if (typeExpr == NULL)
                 fatal_parse_error_f(ctx, "Can't use an interface block as a type for a uniform.");
-        AstString name = parse_name(ctx);
+        char *name = parse_name(ctx);
         parse_semicolon(ctx);
         struct UniformDecl *uniformDecl = create_uniformdecl(ctx->ast);
         uniformDecl->uniDeclName = name;
         uniformDecl->uniDeclTypeExpr = typeExpr;
-        //printf("parse uniform (%s) %s %s\n", ctx->filepath, get_aststring_buffer(ctx->ast, name), primtypeKindString[typeExpr->primtypeKind]);
+        //printf("parse uniform (%s) %s %s\n", ctx->filepath, name, primtypeKindString[typeExpr->primtypeKind]);
         return uniformDecl;
 }
 
@@ -579,10 +579,10 @@ static void parse_FuncDefn_or_FuncDecl(struct Ctx *ctx)
 {
         //message_f("Function!", ctx->tokenBufferLength);
         struct TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
-        AstString name = parse_name(ctx);
+        char *name = parse_name(ctx);
         parse_simple_token(ctx, TOKEN_LEFTPAREN);
         int numArgs = 0;
-        AstString *argNames = NULL;
+        char **argNames = NULL;
         struct TypeExpr **argTypeExprs = NULL;
         if (!look_token_kind(ctx, TOKEN_RIGHTPAREN)) {
                 for (;;) {
@@ -654,9 +654,21 @@ static void parse(struct Ctx *ctx)
         }
 }
 
-void parse_next_file(struct Ctx *ctx, const char *filepath, const char *fileContents, int fileSize)
+void parse_shader(struct Ctx *ctx, int shaderIndex)
 {
-        ctx->filepath = filepath;
+        int fileIndex = -1;
+        for (int i = 0; i < ctx->ast->numFiles; i++)
+                if (!strcmp(ctx->ast->shaderInfo[shaderIndex].shaderName,
+                            ctx->ast->fileInfo[i].fileID))
+                        fileIndex = i;
+        if (fileIndex == -1)
+                fatal_f("No source file for shader '%s'",
+                        ctx->ast->shaderInfo[shaderIndex].shaderName);
+        const char *fileID = ctx->ast->fileInfo[fileIndex].fileID;
+        const char *fileContents = ctx->ast->fileInfo[fileIndex].contents;
+        int fileSize = ctx->ast->fileInfo[fileIndex].size;
+
+        ctx->filepath = fileID;
         ctx->fileContents = fileContents;
         ctx->fileSize = fileSize;
 
@@ -670,7 +682,16 @@ void parse_next_file(struct Ctx *ctx, const char *filepath, const char *fileCont
         ctx->tokenBufferLength = 0;
         ctx->tokenBufferCapacity = 0;
 
-        add_file_to_ast_and_switch_to_it(ctx->ast, filepath);
+        {
+        struct ShaderfileAst *fa = &ctx->ast->shaderfileAsts[shaderIndex];
+        memset(fa, 0, sizeof *fa);
+        int filepathLength = (int) strlen(fileID);
+        ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
+        memcpy(fa->filepath, fileID, filepathLength + 1);
+        // switch
+        ctx->ast->currentFileIndex = fileIndex;
+        }
+
         parse(ctx);
 }
 

@@ -7,11 +7,12 @@ CFLAGS += -Iinclude
 CFLAGS += -DDATA=extern
 
 CFILES =
+CFILES += src/api.c
 CFILES += src/ast.c
 CFILES += src/backtrace_linux.c
 CFILES += src/data.c
 CFILES += src/parse.c
-CFILES += src/parselinkerfile.c
+#CFILES += src/parselinkerfile.c
 CFILES += src/process.c
 CFILES += src/write_c_interface.c
 CFILES += src/logging.c
