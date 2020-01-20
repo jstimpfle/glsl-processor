@@ -18,6 +18,37 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\glsl-processor\api.h" />
+    <ClInclude Include="..\..\include\glsl-processor\ast.h" />
+    <ClInclude Include="..\..\include\glsl-processor\backtrace.h" />
+    <ClInclude Include="..\..\include\glsl-processor\defs.h" />
+    <ClInclude Include="..\..\include\glsl-processor\logging.h" />
+    <ClInclude Include="..\..\include\glsl-processor\memoryalloc.h" />
+    <ClInclude Include="..\..\include\glsl-processor\parse.h" />
+    <ClInclude Include="..\..\include\glsl-processor\process.h" />
+    <ClInclude Include="..\..\include\glsl-processor\write_c_interface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\api.c" />
+    <ClCompile Include="..\..\src\ast.c" />
+    <ClCompile Include="..\..\src\backtrace_win32.c" />
+    <ClCompile Include="..\..\src\data.c" />
+    <ClCompile Include="..\..\src\logging.c" />
+    <ClCompile Include="..\..\src\main.c" />
+    <ClCompile Include="..\..\src\memoryalloc.c" />
+    <ClCompile Include="..\..\src\parse.c" />
+    <ClCompile Include="..\..\src\process.c" />
+    <ClCompile Include="..\..\src\write_c_interface.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\example-shaders\arc.frag" />
+    <None Include="..\..\example-shaders\arc.vert" />
+    <None Include="..\..\example-shaders\circle.frag" />
+    <None Include="..\..\example-shaders\circle.vert" />
+    <None Include="..\..\example-shaders\line.frag" />
+    <None Include="..\..\example-shaders\line.vert" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{AD1488EA-1C3C-4248-9F6B-9ECA1F90D0E0}</ProjectGuid>
@@ -132,28 +163,6 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\include\glsl-processor\backtrace.h" />
-    <ClInclude Include="..\..\include\glsl-processor\defs.h" />
-    <ClInclude Include="..\..\include\glsl-processor\logging.h" />
-    <ClInclude Include="..\..\include\glsl-processor\memoryalloc.h" />
-    <ClInclude Include="..\..\include\glsl-processor\parse.h" />
-    <ClInclude Include="..\..\include\glsl-processor\ast.h" />
-    <ClInclude Include="..\..\include\glsl-processor\parselinkerfile.h" />
-    <ClInclude Include="..\..\include\glsl-processor\process.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\src\ast.c" />
-    <ClCompile Include="..\..\src\backtrace_win32.c" />
-    <ClCompile Include="..\..\src\data.c" />
-    <ClCompile Include="..\..\src\logging.c" />
-    <ClCompile Include="..\..\src\main.c" />
-    <ClCompile Include="..\..\src\memoryalloc.c" />
-    <ClCompile Include="..\..\src\parse.c" />
-    <ClCompile Include="..\..\src\parselinkerfile.c" />
-    <ClCompile Include="..\..\src\process.c" />
-    <ClCompile Include="..\..\src\process_mts.c" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

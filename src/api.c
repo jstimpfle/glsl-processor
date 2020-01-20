@@ -50,20 +50,17 @@ static void sp_destroy_string(struct SP_Ctx *ctx, char *ptr)
         sp_destroy_buffer(ctx, ptr);
 }
 
-void _sp_delete_from_array(void **ptr, int *numElems, int offset, int length, int moveAmount)
+static inline void _sp_delete_from_array(char **ptr, int *numElems, int idx, int elemSize)
 {
-        memmove((char*)*ptr + offset - moveAmount, (char*)*ptr + offset, length);
+        int off1 = idx * elemSize;
+        int off2 = (idx + 1) * elemSize;
+        int length = (*numElems - (idx + 1)) * elemSize;
+        memmove(ptr + off1, ptr + off2, length);
         *numElems -= 1;
-        REALLOC_MEMORY(ptr, *numElems);
+        realloc_memory(ptr, *numElems, elemSize);
 }
 
-static inline void __sp_delete_from_array(void **ptr, int *numElems, int idx, int elemSize)
-{
-        _sp_delete_from_array(ptr, numElems, (idx + 1) * elemSize,
-                              (*numElems - idx - 1) * elemSize, elemSize);
-}
-
-#define SP_DELETE_FROM_ARRAY(pptr, pNumElems, idx) __sp_delete_from_array((void**)(pptr), (pNumElems), (idx), sizeof **(pptr))
+#define SP_DELETE_FROM_ARRAY(pptr, pNumElems, idx) _sp_delete_from_array((char**)(pptr), (pNumElems), (idx), sizeof **(pptr))
 
 static int sp_find_file(struct SP_Ctx *ctx, const char *fileID)
 {
