@@ -45,7 +45,7 @@ int main(void)
 {
         struct SP_Ctx sp = {0};
         for (int i = 0; i < LENGTH(shaders); i++) {
-                char filepath[256] = "shaders/";
+                char filepath[256] = "example-shaders/";
                 ENSURE(strlen(filepath) + strlen(shaders[i]) + 1 <= LENGTH(filepath));
                 memcpy(filepath + strlen(filepath), shaders[i], strlen(shaders[i]) + 1);
                 FILE *f = fopen(filepath, "rb");
