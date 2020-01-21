@@ -31,7 +31,7 @@ static int poolObjectSize[NUM_POOL_KINDS] = {
 
 static void *allocate_pooled_object(struct GP_Ctx *ctx, int poolKind)
 {
-        ENSURE(0 <= poolKind && poolKind < NUM_POOL_KINDS);
+        GP_ENSURE(0 <= poolKind && poolKind < NUM_POOL_KINDS);
         int size = poolObjectSize[poolKind];
         void *ptr;
         alloc_memory(&ptr, 1, size);

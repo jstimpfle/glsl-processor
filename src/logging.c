@@ -1,7 +1,7 @@
 #include <glsl-processor/backtrace.h>
 #include <glsl-processor/logging.h>
 
-void _gp_message_begin(struct LogCtx logCtx)
+void _gp_message_begin(struct GP_LogCtx logCtx)
 {
         fprintf(stderr, "In %s:%d: ", logCtx.filename, logCtx.line);
 }
@@ -29,14 +29,14 @@ void gp_message_end(void)
         fprintf(stderr, "\n");
 }
 
-void _gp_message_fv(struct LogCtx logCtx, const char *fmt, va_list ap)
+void _gp_message_fv(struct GP_LogCtx logCtx, const char *fmt, va_list ap)
 {
         _gp_message_begin(logCtx);
         gp_message_write_fv(fmt, ap);
         gp_message_end();
 }
 
-void _gp_message_f(struct LogCtx logCtx, const char *fmt, ...)
+void _gp_message_f(struct GP_LogCtx logCtx, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
@@ -44,12 +44,12 @@ void _gp_message_f(struct LogCtx logCtx, const char *fmt, ...)
         va_end(ap);
 }
 
-void _gp_message_s(struct LogCtx logCtx, const char *msg)
+void _gp_message_s(struct GP_LogCtx logCtx, const char *msg)
 {
         _gp_message_f(logCtx, "%s", msg);
 }
 
-void _gp_fatal_begin(struct LogCtx logCtx)
+void _gp_fatal_begin(struct GP_LogCtx logCtx)
 {
         _gp_message_begin(logCtx);
         gp_message_write_f("FATAL ERROR: ");
@@ -74,14 +74,14 @@ void NORETURN gp_fatal_end(void)
         abort();
 }
 
-void NORETURN _gp_fatal_fv(struct LogCtx logCtx, const char *fmt, va_list ap)
+void NORETURN _gp_fatal_fv(struct GP_LogCtx logCtx, const char *fmt, va_list ap)
 {
         _gp_fatal_begin(logCtx);
         gp_fatal_write_fv(fmt, ap);
         gp_fatal_end();
 }
 
-void NORETURN _gp_fatal_f(struct LogCtx logCtx, const char *fmt, ...)
+void NORETURN _gp_fatal_f(struct GP_LogCtx logCtx, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
@@ -91,7 +91,7 @@ void NORETURN _gp_fatal_f(struct LogCtx logCtx, const char *fmt, ...)
 
 
 
-void _gp_internalerror_begin(struct LogCtx logCtx)
+void _gp_internalerror_begin(struct GP_LogCtx logCtx)
 {
         _gp_message_begin(logCtx);
         gp_message_write_f("INTERNAL ERROR: ");
@@ -117,14 +117,14 @@ void NORETURN gp_internalerror_end(void)
         abort();
 }
 
-void NORETURN _gp_internalerror_fv(struct LogCtx logCtx, const char *fmt, va_list ap)
+void NORETURN _gp_internalerror_fv(struct GP_LogCtx logCtx, const char *fmt, va_list ap)
 {
         _gp_internalerror_begin(logCtx);
         gp_internalerror_write_fv(fmt, ap);
         gp_internalerror_end();
 }
 
-void NORETURN _gp_internalerror_f(struct LogCtx logCtx, const char *fmt, ...)
+void NORETURN _gp_internalerror_f(struct GP_LogCtx logCtx, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);

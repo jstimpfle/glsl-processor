@@ -1,5 +1,5 @@
-#ifndef GLSL_PROCESSOR_DEFS_H_INCLUDED
-#define GLSL_PROCESSOR_DEFS_H_INCLUDED
+#ifndef GP_DEFS_H_INCLUDED
+#define GP_DEFS_H_INCLUDED
 
 #if defined(_MSC_VER)
 #define NORETURN _declspec(noreturn)

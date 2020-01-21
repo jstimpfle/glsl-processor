@@ -74,7 +74,7 @@ void gp_process(struct GP_Ctx *ctx)
                         if (ctx->programUniforms[i].typeKind != ctx->programUniforms[j-1].typeKind) {
                                 const char *programName = ctx->programInfo[ctx->programUniforms[i].programIndex].programName;
                                 const char *uniformName = ctx->programUniforms[i].uniformName;
-                                fatal_f("The shader program '%s' cannot be linked since there are multiple uniforms '%s' with incompatible types",
+                                gp_fatal_f("The shader program '%s' cannot be linked since there are multiple uniforms '%s' with incompatible types",
                                         programName, uniformName);
                         }
                 }
@@ -93,7 +93,7 @@ void gp_process(struct GP_Ctx *ctx)
                         if (ctx->programAttributes[i].typeKind != ctx->programAttributes[j-1].typeKind) {
                                 const char *programName = ctx->programInfo[ctx->programAttributes[i].programIndex].programName;
                                 const char *attributeName = ctx->programAttributes[i].attributeName;
-                                fatal_f("The shader program '%s' cannot be linked since there are multiple attributes '%s' with incompatible types.",
+                                gp_fatal_f("The shader program '%s' cannot be linked since there are multiple attributes '%s' with incompatible types.",
                                         programName, attributeName);
                         }
                 }

@@ -1,5 +1,5 @@
-#ifndef GLSLPROCESSOR_AST_H_INCLUDED
-#define GLSLPROCESSOR_AST_H_INCLUDED
+#ifndef GP_AST_H_INCLUDED
+#define GP_AST_H_INCLUDED
 
 #include <glsl-processor/defs.h>
 #include <glsl-processor/parse.h>  // TODO: unify these two files
@@ -272,7 +272,6 @@ struct GP_VariableDecl *create_variabledecl(struct GP_Ctx *ctx);
 struct GP_FuncDecl *create_funcdecl(struct GP_Ctx *ctx);
 struct GP_FuncDefn *create_funcdefn(struct GP_Ctx *ctx);
 
-struct GP_ToplevelNode *add_new_toplevel_node_to_fileast(struct GP_ShaderfileAst *fileAst);
 struct GP_ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx);
 
 void gp_setup(struct GP_Ctx *ctx);

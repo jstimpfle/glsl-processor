@@ -13,7 +13,7 @@ static void make_directory_if_not_exists(const char *dirpath)
 {
         BOOL ret = CreateDirectory(dirpath, NULL);
         if (!ret && GetLastError() != ERROR_ALREADY_EXISTS)
-                fatal_f("Failed to create directory %s", dirpath);
+                gp_fatal_f("Failed to create directory %s", dirpath);
 }
 #else
 #include <sys/stat.h>
@@ -60,7 +60,7 @@ static void commit_to_file(struct MemoryBuffer *mb, const char *filepath)
                         fseek(f, 0, SEEK_END);
                         long contentsLength = ftell(f);
                         if (contentsLength == -1)
-                                fatal_f("Failed to ftell() file '%s': %s", filepath, strerror(errno));
+                                gp_fatal_f("Failed to ftell() file '%s': %s", filepath, strerror(errno));
                         if (contentsLength != mb->length)
                                 different = 1;
                         else {
@@ -69,7 +69,7 @@ static void commit_to_file(struct MemoryBuffer *mb, const char *filepath)
                                 ALLOC_MEMORY(&contents, contentsLength + 1);
                                 size_t readBytes = fread(contents, 1, contentsLength + 1, f);
                                 if (readBytes != contentsLength)
-                                        fatal_f("File '%s' seems to have changed during the commit");
+                                        gp_fatal_f("File '%s' seems to have changed during the commit");
                                 if (memcmp(contents, mb->data, mb->length) != 0)
                                         different = 1;
                                 FREE_MEMORY(&contents);
@@ -80,11 +80,11 @@ static void commit_to_file(struct MemoryBuffer *mb, const char *filepath)
         if (different) {
                 FILE *f = fopen(filepath, "wb");
                 if (f == NULL)
-                        fatal_f("Failed to open '%s' for writing", filepath);
+                        gp_fatal_f("Failed to open '%s' for writing", filepath);
                 fwrite(mb->data, 1, mb->length, f);
                 fflush(f);
                 if (ferror(f))
-                        fatal_f("I/O error while writing '%s'", filepath);
+                        gp_fatal_f("I/O error while writing '%s'", filepath);
                 fclose(f);
         }
 }
@@ -299,7 +299,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 const char *programName = ctx->programInfo[programIndex].programName;
                 const char *uniformName = ctx->programUniforms[i].uniformName;
                 const char *typeName = PRIMTYPE_to_GRAFIKUNIFORMTYPE[primtypeKind];
-                ENSURE(typeName != NULL);
+                GP_ENSURE(typeName != NULL);
                 append_to_buffer_f(&mts->cFileHandle, INDENT "[UNIFORM_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
                         programName, uniformName, programName, typeName, uniformName);
         }
@@ -312,7 +312,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 const char *programName = ctx->programInfo[programIndex].programName;
                 const char *attributeName = ctx->programAttributes[i].attributeName;
                 const char *typeName = PRIMTYPE_to_GRAFIKATTRIBUTETYPE[primtypeKind];
-                ENSURE(typeName != NULL);
+                GP_ENSURE(typeName != NULL);
                 append_to_buffer_f(&mts->cFileHandle, INDENT "[ATTRIBUTE_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
                         programName, attributeName, programName, typeName, attributeName);
         }
@@ -375,7 +375,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 case GP_PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
                 case GP_PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
                 case GP_PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
-                default: fatal_f("Not implemented!");
+                default: gp_fatal_f("Not implemented!");
                 }
                 append_to_buffer_f(&mts->hFileHandle, fmt, programName, programName, uniformName);
         }
@@ -404,7 +404,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 case GP_PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
                 case GP_PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
                 case GP_PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
-                default: fatal_f("Not implemented!");
+                default: gp_fatal_f("Not implemented!");
                 }
                 append_to_buffer_f(&mts->hFileHandle, fmt, programName, programName, uniformName);
                 if (i + 1 == ctx->numProgramUniforms || programIndex != ctx->programUniforms[i + 1].programIndex)

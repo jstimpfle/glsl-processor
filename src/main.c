@@ -2,7 +2,7 @@
 #include <glsl-processor/logging.h>
 #include <glsl-processor/memoryalloc.h>
 #include <glsl-processor/ast.h>
-#include <glsl-processor/api.h>
+#include <glsl-processor/builder.h>
 #include <glsl-processor/process.h>
 #include <glsl-processor/write_c_interface.h>
 
@@ -43,14 +43,14 @@ static const struct {
 
 int main(void)
 {
-        struct SP_Ctx sp = {0};
+        struct GP_Builder sp = {0};
         for (int i = 0; i < LENGTH(shaders); i++) {
                 char filepath[256] = "example-shaders/";
-                ENSURE(strlen(filepath) + strlen(shaders[i]) + 1 <= LENGTH(filepath));
+                GP_ENSURE(strlen(filepath) + strlen(shaders[i]) + 1 <= LENGTH(filepath));
                 memcpy(filepath + strlen(filepath), shaders[i], strlen(shaders[i]) + 1);
                 FILE *f = fopen(filepath, "rb");
                 if (f == NULL)
-                        fatal_f("Failed to open shader file '%s'", filepath);
+                        gp_fatal_f("Failed to open shader file '%s'", filepath);
                 fseek(f, 0, SEEK_END);
                 long size = ftell(f);
                 char *data;
@@ -58,12 +58,12 @@ int main(void)
                 fseek(f, 0, SEEK_SET);
                 size_t nread = fread(data, 1, size + 1, f);
                 if (nread != size)
-                        fatal_f("Expected to read %d bytes from '%s', but got %d",
+                        gp_fatal_f("Expected to read %d bytes from '%s', but got %d",
                                 size, filepath, nread);
                 if (ferror(f))
-                        fatal_f("I/O error while reading from '%s'", filepath);
+                        gp_fatal_f("I/O error while reading from '%s'", filepath);
                 fclose(f);
-                sp_create_file(&sp, shaders[i], data, size);
+                gp_builder_create_file(&sp, shaders[i], data, size);
         }
         for (int i = 0; i < LENGTH(shaders); i++) {
                 int shadertypeKind = -1;
@@ -76,16 +76,16 @@ int main(void)
                                 shadertypeKind = shadertypeMap[j].shadertypeKind;
                 }
                 if (shadertypeKind == -1)
-                        fatal_f("Invalid shader extension: '%s'", shaders[i]);
-                sp_create_shader(&sp, shaders[i], shadertypeKind);
+                        gp_fatal_f("Invalid shader extension: '%s'", shaders[i]);
+                gp_builder_create_shader(&sp, shaders[i], shadertypeKind);
         }
         for (int i = 0; i < LENGTH(programs); i++)
-                sp_create_program(&sp, programs[i]);
+                gp_builder_create_program(&sp, programs[i]);
         for (int i = 0; i < LENGTH(links); i++)
-                sp_create_link(&sp, links[i].program, links[i].shader);
-        sp_process(&sp);
+                gp_builder_create_link(&sp, links[i].program, links[i].shader);
+        gp_builder_process(&sp);
         struct GP_Ctx ctx = {0};
-        sp_to_gp(&sp, &ctx);
+        gp_builder_to_ctx(&sp, &ctx);
         for (int i = 0; i < ctx.numShaders; i++)
                 gp_parse_shader(&ctx, i);
         gp_process(&ctx);

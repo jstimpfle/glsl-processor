@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\glsl-processor\api.h" />
+    <ClInclude Include="..\..\include\glsl-processor\builder.h" />
     <ClInclude Include="..\..\include\glsl-processor\ast.h" />
     <ClInclude Include="..\..\include\glsl-processor\backtrace.h" />
     <ClInclude Include="..\..\include\glsl-processor\defs.h" />
@@ -30,7 +30,7 @@
     <ClInclude Include="..\..\include\glsl-processor\write_c_interface.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\api.c" />
+    <ClCompile Include="..\..\src\builder.c" />
     <ClCompile Include="..\..\src\ast.c" />
     <ClCompile Include="..\..\src\backtrace_win32.c" />
     <ClCompile Include="..\..\src\data.c" />

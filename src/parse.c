@@ -54,7 +54,7 @@ static void compute_line_and_column(struct GP_Ctx *ctx, int *outLine, int *outCo
 }
 
 void NORETURN _fatal_parse_error_fv(
-                struct LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, va_list ap)
+                struct GP_LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, va_list ap)
 {
         int line;
         int column;
@@ -67,7 +67,7 @@ void NORETURN _fatal_parse_error_fv(
 }
 
 static void NORETURN _fatal_parse_error_f(
-                struct LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, ...)
+                struct GP_LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
@@ -76,9 +76,9 @@ static void NORETURN _fatal_parse_error_f(
 }
 
 #define fatal_parse_error_fv(ctx, fmt, ap) \
-        _fatal_parse_error_fv(MAKE_LOGCTX(), (ctx), (fmt), (ap))
+        _fatal_parse_error_fv(GP_MAKE_LOGCTX(), (ctx), (fmt), (ap))
 #define fatal_parse_error_f(ctx, fmt, ...) \
-        _fatal_parse_error_f(MAKE_LOGCTX(), (ctx), (fmt), ##__VA_ARGS__)
+        _fatal_parse_error_f(GP_MAKE_LOGCTX(), (ctx), (fmt), ##__VA_ARGS__)
 
 
 static int look_character(struct GP_Ctx *ctx)
@@ -96,7 +96,7 @@ static int look_character(struct GP_Ctx *ctx)
 
 static void consume_character(struct GP_Ctx *ctx)
 {
-        ENSURE(ctx->haveSavedCharacter);
+        GP_ENSURE(ctx->haveSavedCharacter);
         ctx->haveSavedCharacter = 0;
 }
 
@@ -286,13 +286,13 @@ ok:
 
 static void consume_token(struct GP_Ctx *ctx)
 {
-        ENSURE(ctx->haveSavedToken);
+        GP_ENSURE(ctx->haveSavedToken);
         ctx->haveSavedToken = 0;
 }
 
 static int is_keyword(struct GP_Ctx *ctx, const char *keyword)
 {
-        ENSURE(ctx->haveSavedToken);
+        GP_ENSURE(ctx->haveSavedToken);
         if (ctx->tokenKind != GP_TOKEN_NAME)
                 return 0;
         return !strcmp(ctx->tokenBuffer, keyword);
@@ -308,7 +308,7 @@ static int is_known_type_name(struct GP_Ctx *ctx)
 
 static int is_binop_token(struct GP_Ctx *ctx, int *binopKind)
 {
-        ENSURE(ctx->haveSavedToken);
+        GP_ENSURE(ctx->haveSavedToken);
         for (int i = 0; i < gp_numBinopTokens; i++) {
                 if (ctx->tokenKind == gp_binopTokenInfo[i].tokenKind) {
                         *binopKind = gp_binopTokenInfo[i].binopKind;
@@ -635,7 +635,7 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
                             ctx->fileInfo[i].fileID))
                         fileIndex = i;
         if (fileIndex == -1)
-                fatal_f("No source file for shader '%s'",
+                gp_fatal_f("No source file for shader '%s'",
                         ctx->shaderInfo[shaderIndex].shaderName);
         const char *fileID = ctx->fileInfo[fileIndex].fileID;
         const char *fileContents = ctx->fileInfo[fileIndex].contents;
@@ -682,7 +682,7 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
                         parse_FuncDefn_or_FuncDecl(ctx);
                 }
                 else
-                        message_f("Unexpected token type %s!",
+                        gp_message_f("Unexpected token type %s!",
                                   gp_tokenKindString[ctx->tokenKind]);
         }
 }

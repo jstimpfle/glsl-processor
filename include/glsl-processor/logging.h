@@ -1,5 +1,5 @@
-#ifndef GLSLPROCESSOR_LOGGING_H_INCLUDED
-#define GLSLPROCESSOR_LOGGING_H_INCLUDED
+#ifndef GP_LOGGING_H_INCLUDED
+#define GP_LOGGING_H_INCLUDED
 
 #include <glsl-processor/defs.h>
 
@@ -8,8 +8,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#define GP_ENSURE(x) do { if (!(x)) gp_internalerror_f("Assertion failed: %s", #x); } while (0)
 
+#define GP_ENSURE(x) do { if (!(x)) gp_internalerror_f("Assertion failed: %s", #x); } while (0)
 
 struct GP_LogCtx {
         const char *filename;
@@ -49,6 +49,5 @@ void NORETURN _gp_internalerror_f(struct GP_LogCtx logCtx, const char *fmt, ...)
 #define gp_fatal_f(fmt, ...) _gp_fatal_f(GP_MAKE_LOGCTX(), (fmt), ##__VA_ARGS__)
 #define gp_internalerror_fv(fmt, ap) _gp_internalerror_fv(GP_MAKE_LOGCTX(), (fmt), (ap))
 #define gp_internalerror_f(fmt, ...) _gp_internalerror_f(GP_MAKE_LOGCTX(), (fmt), ##__VA_ARGS__)
-
 
 #endif
