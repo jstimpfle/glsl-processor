@@ -43,6 +43,11 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <IntDir>IntDir/$(Configuration)-$(Platform)</IntDir>
+    <OutDir>OutDir/$(Configuration)-$(Platform)</OutDir>
+  </PropertyGroup>
+
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
