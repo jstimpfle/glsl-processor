@@ -7,8 +7,8 @@ CFLAGS += -Iinclude
 CFLAGS += -DDATA=extern
 
 CFILES =
-CFILES += src/api.c
 CFILES += src/ast.c
+CFILES += src/builder.c
 CFILES += src/data.c
 CFILES += src/parse.c
 CFILES += src/process.c

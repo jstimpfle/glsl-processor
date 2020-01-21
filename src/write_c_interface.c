@@ -23,8 +23,8 @@ static void make_directory_if_not_exists(const char *dirpath)
 {
         int r = mkdir(dirpath, 0770);
         if (r == -1 && errno != EEXIST)
-                fatal_f("Failed to create directory %s: %s",
-                        dirpath, strerror(errno));
+                gp_fatal_f("Failed to create directory %s: %s",
+                           dirpath, strerror(errno));
 }
 #endif
 
