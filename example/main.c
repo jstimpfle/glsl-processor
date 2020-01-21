@@ -30,8 +30,8 @@ static const char *const programs[] = {
 };
 
 static const struct {
-        const char *program;
-        const char *shader;
+        const char *programID;
+        const char *shaderID;
 } links[] = {
         { "line", "line_vert" },
         { "line", "line_frag" },
@@ -68,7 +68,7 @@ int main(void)
         for (int i = 0; i < LENGTH(programs); i++)
                 gp_builder_create_program(&sp, programs[i]);
         for (int i = 0; i < LENGTH(links); i++)
-                gp_builder_create_link(&sp, links[i].program, links[i].shader);
+                gp_builder_create_link(&sp, links[i].programID, links[i].shaderID);
         gp_builder_process(&sp);
         struct GP_Ctx ctx = {0};
         gp_builder_to_ctx(&sp, &ctx);
