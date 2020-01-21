@@ -5,6 +5,12 @@
 #include <glsl-processor/parse.h>  // TODO: unify these two files
 
 enum {
+        GP_SHADERTYPE_VERTEX,
+        GP_SHADERTYPE_FRAGMENT,
+        GP_NUM_SHADERTYPE_KINDS
+};
+
+enum {
         TOKEN_EOF,
         TOKEN_LITERAL,
         TOKEN_NAME,
@@ -37,13 +43,13 @@ enum {
         TOKEN_DOUBLEAMPERSAND,
         TOKEN_PIPE,
         TOKEN_DOUBLEPIPE,
-        NUM_TOKEN_KINDS
+        GP_NUM_TOKEN_KINDS
 };
 
 enum {
         UNOP_NOT,
         UNOP_NEGATE,
-        NUM_UNOP_KINDS,
+        GP_NUM_UNOP_KINDS,
 };
 
 enum {
@@ -67,7 +73,7 @@ enum {
         BINOP_BITOR,
         BINOP_LOGICALAND,
         BINOP_LOGICALOR,
-        NUM_BINOP_KINDS,
+        GP_NUM_BINOP_KINDS,
 };
 
 enum {
@@ -88,13 +94,7 @@ enum {
         PRIMTYPE_MAT3,
         PRIMTYPE_MAT4,
         PRIMTYPE_SAMPLER2D,
-        NUM_PRIMTYPE_KINDS
-};
-
-enum {
-        SHADERTYPE_VERTEX,
-        SHADERTYPE_FRAGMENT,
-        NUM_SHADERTYPE_KINDS
+        GP_NUM_PRIMTYPE_KINDS
 };
 
 enum {
@@ -107,10 +107,6 @@ enum {
 typedef int Expr;
 typedef int Stmt;
 typedef int TypeExpr;
-
-typedef struct {
-        char *data; // zero-terminated
-} AstString;
 
 struct LitExpr {
         double floatingValue;  // TODO better representation
@@ -269,62 +265,28 @@ struct ProgramAttribute {
         char *attributeName;
 };
 
-struct Ast {
-        struct FileInfo *fileInfo;
-        struct ProgramInfo *programInfo;
-        struct ShaderInfo *shaderInfo;
-        struct LinkInfo *linkInfo;
+extern const char *const gp_tokenKindString[GP_NUM_TOKEN_KINDS];
+extern const char *const gp_primtypeKindString[GP_NUM_PRIMTYPE_KINDS];
+extern const char *const gp_primtypeString[GP_NUM_PRIMTYPE_KINDS];
+extern const char *const gp_shadertypeKindString[GP_NUM_SHADERTYPE_KINDS];
+extern const struct UnopInfo gp_unopInfo[GP_NUM_UNOP_KINDS];
+extern const struct UnopTokenInfo gp_unopTokenInfo[];
+extern const struct BinopInfo gp_binopInfo[GP_NUM_BINOP_KINDS];
+extern const struct BinopTokenInfo gp_binopTokenInfo[];
+extern const int gp_numUnopToken;
+extern const int gp_numBinopTokens;
 
-        int numFiles;
-        int numPrograms;
-        int numShaders;
-        int numLinks;
-
-        struct ShaderfileAst *shaderfileAsts;
-        int currentFileIndex;  // global state for simpler code
-
-        // TODO: think about allocation strategy...
-        struct AstString *astStrings;
-
-        // this stuff here is completely computed from the parsed data.
-        // It's about time now that we rename this structure from "Ast"
-        // to something better suited.
-        struct ProgramUniform *programUniforms;
-        struct ProgramAttribute *programAttributes;
-
-        int numProgramUniforms;
-        int numProgramAttributes;
-};
-
-
-extern const char *const tokenKindString[NUM_TOKEN_KINDS];
-extern const char *const primtypeKindString[NUM_PRIMTYPE_KINDS];
-extern const char *const primtypeString[NUM_PRIMTYPE_KINDS];
-extern const char *const shadertypeKindString[NUM_SHADERTYPE_KINDS];
-extern const struct UnopInfo unopInfo[NUM_UNOP_KINDS];
-extern const struct UnopTokenInfo unopTokenInfo[];
-extern const struct BinopInfo binopInfo[NUM_BINOP_KINDS];
-extern const struct BinopTokenInfo binopTokenInfo[];
-extern const int numUnopToken;
-extern const int numBinopTokens;
-
-char *create_aststring(struct Ast *ast, const char *string);
-struct TypeExpr *create_typeexpr(struct Ast *ast);
-struct UniformDecl *create_uniformdecl(struct Ast *ast);
-struct VariableDecl *create_variabledecl(struct Ast *ast);
-struct FuncDecl *create_funcdecl(struct Ast *ast);
-struct FuncDefn *create_funcdefn(struct Ast *ast);
+char *alloc_string(struct GP_Ctx *ctx, const char *string);
+struct TypeExpr *create_typeexpr(struct GP_Ctx *ctx);
+struct UniformDecl *create_uniformdecl(struct GP_Ctx *ctx);
+struct VariableDecl *create_variabledecl(struct GP_Ctx *ctx);
+struct FuncDecl *create_funcdecl(struct GP_Ctx *ctx);
+struct FuncDefn *create_funcdefn(struct GP_Ctx *ctx);
 
 struct ToplevelNode *add_new_toplevel_node_to_fileast(struct ShaderfileAst *fileAst);
-struct ToplevelNode *add_new_toplevel_node(struct Ast *ast);
+struct ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx);
 
-struct ProgramDecl *create_program_decl(struct Ast *ast);
-struct ShaderDecl *create_shader_decl(struct Ast *ast);
-struct LinkItem *create_link_item(struct Ast *ast);
-
-void add_file_to_ast_and_switch_to_it(struct Ast *ast, const char *filepath);
-
-void setup_ast(struct Ast *ast);
-void teardown_ast(struct Ast *ast);
+void gp_setup(struct GP_Ctx *ctx);
+void gp_teardown(struct GP_Ctx *ctx);
 
 #endif

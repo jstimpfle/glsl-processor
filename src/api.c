@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 struct SP_File {
         char *fileID;
         char *contents;
@@ -24,7 +23,6 @@ struct SP_Link {
         char *programID;
         char *shaderID;
 };
-
 
 static char *sp_create_buffer(struct SP_Ctx *ctx, const char *data, int size)
 {
@@ -227,36 +225,36 @@ void sp_process(struct SP_Ctx *ctx)
         }
 }
 
-void sp_to_ast(struct SP_Ctx *sp, struct Ast *ast)
+void sp_to_gp(struct SP_Ctx *sp, struct GP_Ctx *ctx)
 {
-        memset(ast, 0, sizeof *ast);
-        ast->numFiles = sp->numFiles;
-        ast->numPrograms = sp->numPrograms;
-        ast->numShaders = sp->numShaders;
-        ast->numLinks = sp->numLinks;
-        REALLOC_MEMORY(&ast->fileInfo, ast->numFiles);
-        REALLOC_MEMORY(&ast->programInfo, ast->numPrograms);
-        REALLOC_MEMORY(&ast->shaderInfo, ast->numShaders);
-        REALLOC_MEMORY(&ast->linkInfo, ast->numLinks);
+        memset(ctx, 0, sizeof *ctx);
+        ctx->numFiles = sp->numFiles;
+        ctx->numPrograms = sp->numPrograms;
+        ctx->numShaders = sp->numShaders;
+        ctx->numLinks = sp->numLinks;
+        REALLOC_MEMORY(&ctx->fileInfo, ctx->numFiles);
+        REALLOC_MEMORY(&ctx->programInfo, ctx->numPrograms);
+        REALLOC_MEMORY(&ctx->shaderInfo, ctx->numShaders);
+        REALLOC_MEMORY(&ctx->linkInfo, ctx->numLinks);
         for (int i = 0; i < sp->numFiles; i++) {
-                ast->fileInfo[i].fileID = sp->files[i].fileID;
-                ast->fileInfo[i].contents = sp->files[i].contents;
-                ast->fileInfo[i].size = sp->files[i].size;
+                ctx->fileInfo[i].fileID = sp->files[i].fileID;
+                ctx->fileInfo[i].contents = sp->files[i].contents;
+                ctx->fileInfo[i].size = sp->files[i].size;
         }
         for (int i = 0; i < sp->numPrograms; i++)
-                ast->programInfo[i].programName = sp->programs[i].programID;
+                ctx->programInfo[i].programName = sp->programs[i].programID;
         for (int i = 0; i < sp->numShaders; i++) {
-                ast->shaderInfo[i].shaderName = sp->shaders[i].shaderID;
-                ast->shaderInfo[i].shaderType = sp->shaders[i].shadertypeKind;
+                ctx->shaderInfo[i].shaderName = sp->shaders[i].shaderID;
+                ctx->shaderInfo[i].shaderType = sp->shaders[i].shadertypeKind;
         }
         for (int i = 0; i < sp->numLinks; i++) {
                 int programIndex = sp_find_program(sp, sp->links[i].programID);
                 int shaderIndex = sp_find_shader(sp, sp->links[i].shaderID);
                 ENSURE(programIndex != -1);  //should have been caught earlier
                 ENSURE(shaderIndex != -1);  //should have been caught earlier
-                ast->linkInfo[i].programIndex = programIndex;
-                ast->linkInfo[i].shaderIndex = shaderIndex;
+                ctx->linkInfo[i].programIndex = programIndex;
+                ctx->linkInfo[i].shaderIndex = shaderIndex;
         }
         //XXX!!
-        REALLOC_MEMORY(&ast->shaderfileAsts, ast->numShaders);
+        REALLOC_MEMORY(&ctx->shaderfileAsts, ctx->numShaders);
 }

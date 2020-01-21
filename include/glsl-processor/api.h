@@ -1,7 +1,4 @@
-enum {
-        SP_SHADERTYPE_VERTEX,
-        SP_SHADERTYPE_FRAGMENT,
-};
+
 
 struct SP_File;
 struct SP_Program;
@@ -24,7 +21,7 @@ void sp_setup(struct SP_Ctx *ctx);
 void sp_teardown(struct SP_Ctx *ctx);
 
 void sp_process(struct SP_Ctx *ctx);
-void sp_to_ast(struct SP_Ctx *sp, struct Ast *ast);
+void sp_to_gp(struct SP_Ctx *sp, struct GP_Ctx *ctx);
 
 
 void sp_create_file(struct SP_Ctx *ctx, const char *fileID, const char *data, int size);

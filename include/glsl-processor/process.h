@@ -1,2 +1,2 @@
 #include <glsl-processor/ast.h>
-void process_ast(struct Ast *ast);
+void gp_process(struct GP_Ctx *ctx);

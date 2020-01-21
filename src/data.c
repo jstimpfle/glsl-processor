@@ -6,7 +6,7 @@
 #define ENUM_KIND_STRING(x) [x] = #x
 #define ENUM_TO_STRING(x, s) [x] = s
 
-const char *const tokenKindString[NUM_TOKEN_KINDS] = {
+const char *const gp_tokenKindString[GP_NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_EOF ),
         ENUM_KIND_STRING( TOKEN_LITERAL ),
         ENUM_KIND_STRING( TOKEN_NAME ),
@@ -40,17 +40,17 @@ const char *const tokenKindString[NUM_TOKEN_KINDS] = {
         ENUM_KIND_STRING( TOKEN_DOUBLEPIPE ),
 };
 
-const struct UnopInfo unopInfo[NUM_UNOP_KINDS] = {
+const struct UnopInfo gp_unopInfo[GP_NUM_UNOP_KINDS] = {
         [UNOP_NOT] = { "!" },
         [UNOP_NEGATE] = { "-" },
 };
 
-const struct UnopTokenInfo unopTokenInfo[] = {
+const struct UnopTokenInfo gp_unopTokenInfo[] = {
         { TOKEN_NOT, UNOP_NOT },
         { TOKEN_MINUS, UNOP_NEGATE },
 };
 
-const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
+const struct BinopInfo gp_binopInfo[GP_NUM_BINOP_KINDS] = {
 #define MAKE(x, y) [x] = { y }
         MAKE( BINOP_EQ, "==" ),
         MAKE( BINOP_NE, "!=" ),
@@ -75,7 +75,7 @@ const struct BinopInfo binopInfo[NUM_BINOP_KINDS] = {
 #undef MAKE
 };
 
-const struct BinopTokenInfo binopTokenInfo[] = {
+const struct BinopTokenInfo gp_binopTokenInfo[] = {
         { TOKEN_PLUS, BINOP_PLUS },
         { TOKEN_MINUS, BINOP_MINUS },
         { TOKEN_STAR, BINOP_MUL },
@@ -98,11 +98,11 @@ const struct BinopTokenInfo binopTokenInfo[] = {
         { TOKEN_DOUBLEPIPE, BINOP_LOGICALOR },
 };
 
-const int numUnopToken = LENGTH(unopTokenInfo);
-const int numBinopTokens = LENGTH(binopTokenInfo);
+const int gp_numUnopToken = LENGTH(gp_unopTokenInfo);
+const int gp_numBinopTokens = LENGTH(gp_binopTokenInfo);
 
 
-const char *const primtypeString[NUM_PRIMTYPE_KINDS] = {
+const char *const gp_primtypeString[GP_NUM_PRIMTYPE_KINDS] = {
         ENUM_TO_STRING( PRIMTYPE_BOOL, "bool" ),
         ENUM_TO_STRING( PRIMTYPE_INT, "int" ),
         ENUM_TO_STRING( PRIMTYPE_UINT, "uint" ),
@@ -117,7 +117,7 @@ const char *const primtypeString[NUM_PRIMTYPE_KINDS] = {
         ENUM_TO_STRING( PRIMTYPE_SAMPLER2D, "sampler2D" ),
 };
 
-const char *const primtypeKindString[NUM_PRIMTYPE_KINDS] = {
+const char *const gp_primtypeKindString[GP_NUM_PRIMTYPE_KINDS] = {
         ENUM_KIND_STRING(PRIMTYPE_FLOAT),
         ENUM_KIND_STRING(PRIMTYPE_VEC2),
         ENUM_KIND_STRING(PRIMTYPE_VEC3),
@@ -128,7 +128,7 @@ const char *const primtypeKindString[NUM_PRIMTYPE_KINDS] = {
         ENUM_KIND_STRING(PRIMTYPE_SAMPLER2D),
 };
 
-const char *const shadertypeKindString[NUM_SHADERTYPE_KINDS] = {
-        [SHADERTYPE_VERTEX] = "SHADERTYPE_VERTEX",
-        [SHADERTYPE_FRAGMENT] = "SHADERTYPE_FRAGMENT",
+const char *const gp_shadertypeKindString[GP_NUM_SHADERTYPE_KINDS] = {
+        [GP_SHADERTYPE_VERTEX] = "SHADERTYPE_VERTEX",
+        [GP_SHADERTYPE_FRAGMENT] = "SHADERTYPE_FRAGMENT",
 };

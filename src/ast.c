@@ -1,7 +1,7 @@
 #include <glsl-processor/memoryalloc.h>
 #include <glsl-processor/ast.h>
 
-char *create_aststring(struct Ast *ast, const char *data)
+char *alloc_string(struct GP_Ctx *ctx, const char *data)
 {
         int length = (int) strlen(data);
         char *string;
@@ -29,7 +29,7 @@ static int poolObjectSize[NUM_POOL_KINDS] = {
 #undef MAKE
 };
 
-static void *allocate_pooled_object(struct Ast *ast, int poolKind)
+static void *allocate_pooled_object(struct GP_Ctx *ctx, int poolKind)
 {
         ENSURE(0 <= poolKind && poolKind < NUM_POOL_KINDS);
         int size = poolObjectSize[poolKind];
@@ -38,10 +38,10 @@ static void *allocate_pooled_object(struct Ast *ast, int poolKind)
         return ptr;
 }
 
-#define DEFINE_ALLOCATOR_FUNCTION(type, name, poolKind) type *name(struct Ast *ast) \
+#define DEFINE_ALLOCATOR_FUNCTION(type, name, poolKind) type *name(struct GP_Ctx *ctx) \
 { \
         assert(poolObjectSize[poolKind] == sizeof(type)); \
-        return allocate_pooled_object(ast, (poolKind)); \
+        return allocate_pooled_object(ctx, (poolKind)); \
 }
 
 #define DEFINE_ARRAY_ALLOCATOR_FUNCTION(type, name, structName, countMember, arrayMember) type *name(structName *container) \
@@ -65,20 +65,7 @@ struct ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct ShaderfileAst
         return fa->toplevelNodes[idx];
 }
 
-struct ToplevelNode *add_new_toplevel_node(struct Ast *ast)
+struct ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx)
 {
-        return add_new_toplevel_node_to_shaderfileast(&ast->shaderfileAsts[ast->currentFileIndex]);
-}
-
-void setup_ast(struct Ast *ast)
-{
-        memset(ast, 0, sizeof *ast);
-}
-
-void teardown_ast(struct Ast *ast)
-{
-        for (int i = 0; i < ast->numFiles; i++)
-                FREE_MEMORY(&ast->shaderfileAsts[i].filepath);
-        FREE_MEMORY(&ast->shaderfileAsts);
-        FREE_MEMORY(&ast->astStrings);
+        return add_new_toplevel_node_to_shaderfileast(&ctx->shaderfileAsts[ctx->currentFileIndex]);
 }

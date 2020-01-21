@@ -41,14 +41,14 @@ struct MemoryBuffer {
 };
 
 struct MtsCtx {
-        struct Ast *ast;
+        struct GP_Ctx *ctx;
         struct MemoryBuffer hFilepath;
         struct MemoryBuffer cFilepath;
         struct MemoryBuffer hFileHandle;
         struct MemoryBuffer cFileHandle;
 };
 
-static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
+static void commit_to_file(struct MemoryBuffer *mb, const char *filepath)
 {
         // writing only if file is different. This is to avoid the IDE unnecessary noticing File changes.
         int different = 0;
@@ -61,7 +61,7 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
                         long contentsLength = ftell(f);
                         if (contentsLength == -1)
                                 fatal_f("Failed to ftell() file '%s': %s", filepath, strerror(errno));
-                        if (contentsLength != handle->length)
+                        if (contentsLength != mb->length)
                                 different = 1;
                         else {
                                 fseek(f, 0, SEEK_SET);
@@ -70,7 +70,7 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
                                 size_t readBytes = fread(contents, 1, contentsLength + 1, f);
                                 if (readBytes != contentsLength)
                                         fatal_f("File '%s' seems to have changed during the commit");
-                                if (memcmp(contents, handle->data, handle->length) != 0)
+                                if (memcmp(contents, mb->data, mb->length) != 0)
                                         different = 1;
                                 FREE_MEMORY(&contents);
                         }
@@ -81,7 +81,7 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
                 FILE *f = fopen(filepath, "wb");
                 if (f == NULL)
                         fatal_f("Failed to open '%s' for writing", filepath);
-                fwrite(handle->data, 1, handle->length, f);
+                fwrite(mb->data, 1, mb->length, f);
                 fflush(f);
                 if (ferror(f))
                         fatal_f("I/O error while writing '%s'", filepath);
@@ -89,7 +89,7 @@ static void commit_to_file(struct MemoryBuffer *handle, const char *filepath)
         }
 }
 
-static void append_to_buffer_fv(struct MemoryBuffer *handle, const char *fmt, va_list ap)
+static void append_to_buffer_fv(struct MemoryBuffer *mb, const char *fmt, va_list ap)
 {
         /* We're not allowed to use "ap" twice, and on gcc using it twice
         actually resulted in a segfault. So we make a backup copy before giving
@@ -97,71 +97,71 @@ static void append_to_buffer_fv(struct MemoryBuffer *handle, const char *fmt, va
         va_list ap2;
         va_copy(ap2, ap);
         size_t need = vsnprintf(NULL, 0, fmt, ap);
-        REALLOC_MEMORY(&handle->data, handle->length + need + 1);
-        vsnprintf(handle->data + handle->length, need + 1, fmt, ap2);
-        handle->data[handle->length + need] = '\0';
-        handle->length += need;
+        REALLOC_MEMORY(&mb->data, mb->length + need + 1);
+        vsnprintf(mb->data + mb->length, need + 1, fmt, ap2);
+        mb->data[mb->length + need] = '\0';
+        mb->length += need;
 }
 
-static void append_to_buffer_f(struct MemoryBuffer *handle, const char *fmt, ...)
+static void append_to_buffer_f(struct MemoryBuffer *mb, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
-        append_to_buffer_fv(handle, fmt, ap);
+        append_to_buffer_fv(mb, fmt, ap);
         va_end(ap);
 }
 
-static void append_to_buffer(struct MemoryBuffer *handle, const char *data)
+static void append_to_buffer(struct MemoryBuffer *mb, const char *data)
 {
-        append_to_buffer_f(handle, "%s", data);
+        append_to_buffer_f(mb, "%s", data);
 }
 
-static void append_filepath_component(struct MemoryBuffer *buf, const char *comp)
+static void append_filepath_component(struct MemoryBuffer *mb, const char *comp)
 {
         // TODO: make code more correct, at least for Windows and Linux
-        if (!(buf->length == 0 || (buf->data[buf->length - 1] == '/'
+        if (!(mb->length == 0 || (mb->data[mb->length - 1] == '/'
 #ifdef _MSC_VER
-            || buf->data[buf->length - 1] == '\\'
+            || mb->data[mb->length - 1] == '\\'
 #endif
            ))) {
-                append_to_buffer(buf, "/");
+                append_to_buffer(mb, "/");
         }
-        append_to_buffer(buf, comp);
+        append_to_buffer(mb, comp);
 }
 
-static void teardown_buffer(struct MemoryBuffer *handle)
+static void teardown_buffer(struct MemoryBuffer *mb)
 {
-        FREE_MEMORY(&handle->data);
-        memset(handle, 0, sizeof *handle);
+        FREE_MEMORY(&mb->data);
+        memset(mb, 0, sizeof *mb);
 }
 
 
-static void begin_enum(struct MtsCtx *ctx)
+static void begin_enum(struct MtsCtx *mts)
 {
-        append_to_buffer_f(&ctx->hFileHandle, "enum {\n");
+        append_to_buffer_f(&mts->hFileHandle, "enum {\n");
 }
 
-static void end_enum(struct MtsCtx *ctx)
+static void end_enum(struct MtsCtx *mts)
 {
-        append_to_buffer_f(&ctx->hFileHandle, "};\n\n");
+        append_to_buffer_f(&mts->hFileHandle, "};\n\n");
 }
 
-static void add_enum_item(struct MtsCtx *ctx, const char *name1)
+static void add_enum_item(struct MtsCtx *mts, const char *name1)
 {
-        append_to_buffer_f(&ctx->hFileHandle, INDENT "%s,\n", name1);
+        append_to_buffer_f(&mts->hFileHandle, INDENT "%s,\n", name1);
 }
 
-static void add_enum_item_2(struct MtsCtx *ctx, const char *name1, const char *name2)
+static void add_enum_item_2(struct MtsCtx *mts, const char *name1, const char *name2)
 {
-        append_to_buffer_f(&ctx->hFileHandle, INDENT "%s_%s,\n", name1, name2);
+        append_to_buffer_f(&mts->hFileHandle, INDENT "%s_%s,\n", name1, name2);
 }
 
-static void add_enum_item_3(struct MtsCtx *ctx, const char *name1, const char *name2, const char *name3)
+static void add_enum_item_3(struct MtsCtx *mts, const char *name1, const char *name2, const char *name3)
 {
-        append_to_buffer_f(&ctx->hFileHandle, INDENT "%s_%s_%s,\n", name1, name2, name3);
+        append_to_buffer_f(&mts->hFileHandle, INDENT "%s_%s_%s,\n", name1, name2, name3);
 }
 
-static const char *const PRIMTYPE_to_GRAFIKATTRIBUTETYPE[NUM_PRIMTYPE_KINDS] = {
+static const char *const PRIMTYPE_to_GRAFIKATTRIBUTETYPE[GP_NUM_PRIMTYPE_KINDS] = {
         [PRIMTYPE_BOOL] = "GRAFIKATTRTYPE_BOOL",
         [PRIMTYPE_INT] = "GRAFIKATTRTYPE_INT",
         [PRIMTYPE_UINT] = "GRAFIKATTRTYPE_UINT",
@@ -172,7 +172,7 @@ static const char *const PRIMTYPE_to_GRAFIKATTRIBUTETYPE[NUM_PRIMTYPE_KINDS] = {
         [PRIMTYPE_VEC4] = "GRAFIKATTRTYPE_VEC4",
 };
 
-static const char *const PRIMTYPE_to_GRAFIKUNIFORMTYPE[NUM_PRIMTYPE_KINDS] = {
+static const char *const PRIMTYPE_to_GRAFIKUNIFORMTYPE[GP_NUM_PRIMTYPE_KINDS] = {
         [PRIMTYPE_BOOL] = "GRAFIKUNIFORMTYPE_BOOL",
         [PRIMTYPE_INT] = "GRAFIKUNIFORMTYPE_INT",
         [PRIMTYPE_UINT] = "GRAFIKUNIFORMTYPE_UINT",
@@ -186,18 +186,17 @@ static const char *const PRIMTYPE_to_GRAFIKUNIFORMTYPE[NUM_PRIMTYPE_KINDS] = {
         [PRIMTYPE_MAT4] = "GRAFIKUNIFORMTYPE_MAT4",
 };
 
-
-void write_c_interface(struct Ast *ast, const char *autogenDirpath)
+void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
 {
         struct MtsCtx mtsCtx = { 0 };
-        struct MtsCtx *ctx = &mtsCtx;
+        struct MtsCtx *mts = &mtsCtx;
 
-        append_filepath_component(&ctx->hFilepath, autogenDirpath);
-        append_filepath_component(&ctx->cFilepath, autogenDirpath);
-        append_filepath_component(&ctx->hFilepath, "shaders.h");
-        append_filepath_component(&ctx->cFilepath, "shaders.c");
+        append_filepath_component(&mts->hFilepath, autogenDirpath);
+        append_filepath_component(&mts->cFilepath, autogenDirpath);
+        append_filepath_component(&mts->hFilepath, "shaders.h");
+        append_filepath_component(&mts->cFilepath, "shaders.c");
 
-        append_to_buffer_f(&ctx->hFileHandle,
+        append_to_buffer_f(&mts->hFileHandle,
                 "#ifndef AUTOGENERATED_SHADERS_H_INCLUDED\n"
                 "#define AUTOGENERATED_SHADERS_H_INCLUDED\n"
                 "\n"
@@ -208,39 +207,39 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 "#endif\n"
                 "\n");
 
-        begin_enum(ctx);
-        for (int i = 0; i < ast->numPrograms; i++)
-                add_enum_item_2(ctx, "PROGRAM", ast->programInfo[i].programName);
-        add_enum_item(ctx, "NUM_PROGRAM_KINDS");
-        end_enum(ctx);
+        begin_enum(mts);
+        for (int i = 0; i < ctx->numPrograms; i++)
+                add_enum_item_2(mts, "PROGRAM", ctx->programInfo[i].programName);
+        add_enum_item(mts, "NUM_PROGRAM_KINDS");
+        end_enum(mts);
 
-        begin_enum(ctx);
-        for (int i = 0; i < ast->numShaders; i++)
-                add_enum_item_2(ctx, "SHADER", ast->shaderInfo[i].shaderName);
-        add_enum_item(ctx, "NUM_SHADER_KINDS");
-        end_enum(ctx);
+        begin_enum(mts);
+        for (int i = 0; i < ctx->numShaders; i++)
+                add_enum_item_2(mts, "SHADER", ctx->shaderInfo[i].shaderName);
+        add_enum_item(mts, "NUM_SHADER_KINDS");
+        end_enum(mts);
 
-        begin_enum(ctx);
-        for (int i = 0; i < ast->numProgramUniforms; i++) {
-                int programIndex = ast->programUniforms[i].programIndex;
-                const char *programName = ast->programInfo[programIndex].programName;
-                const char *uniformName = ast->programUniforms[i].uniformName;
-                add_enum_item_3(ctx, "UNIFORM", programName, uniformName);
+        begin_enum(mts);
+        for (int i = 0; i < ctx->numProgramUniforms; i++) {
+                int programIndex = ctx->programUniforms[i].programIndex;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *uniformName = ctx->programUniforms[i].uniformName;
+                add_enum_item_3(mts, "UNIFORM", programName, uniformName);
         }
-        add_enum_item(ctx, "NUM_UNIFORM_KINDS");
-        end_enum(ctx);
+        add_enum_item(mts, "NUM_UNIFORM_KINDS");
+        end_enum(mts);
 
-        begin_enum(ctx);
-        for (int i = 0; i < ast->numProgramAttributes; i++) {
-                int programIndex = ast->programAttributes[i].programIndex;
-                const char *programName = ast->programInfo[programIndex].programName;
-                const char *attributeName = ast->programAttributes[i].attributeName;
-                add_enum_item_3(ctx, "ATTRIBUTE", programName, attributeName);
+        begin_enum(mts);
+        for (int i = 0; i < ctx->numProgramAttributes; i++) {
+                int programIndex = ctx->programAttributes[i].programIndex;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *attributeName = ctx->programAttributes[i].attributeName;
+                add_enum_item_3(mts, "ATTRIBUTE", programName, attributeName);
         }
-        add_enum_item(ctx, "NUM_ATTRIBUTE_KINDS");
-        end_enum(ctx);
+        add_enum_item(mts, "NUM_ATTRIBUTE_KINDS");
+        end_enum(mts);
 
-        append_to_buffer_f(&ctx->hFileHandle,
+        append_to_buffer_f(&mts->hFileHandle,
                 "extern const struct SM_ShaderInfo smShaderInfo[NUM_SHADER_KINDS];\n"
                 "extern const struct SM_ProgramInfo smProgramInfo[NUM_PROGRAM_KINDS];\n"
                 "extern const struct SM_LinkInfo smLinkInfo[];\n"
@@ -251,16 +250,16 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 "\n"
         );
 
-        append_to_buffer_f(&ctx->cFileHandle, "#include <shaders.h>\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "#include <shaders.h>\n\n");
 
-        append_to_buffer_f(&ctx->cFileHandle, "const struct SM_ProgramInfo smProgramInfo[NUM_PROGRAM_KINDS] = {\n");
-        for (int i = 0; i < ast->numPrograms; i++) {
-                const char *programName = ast->programInfo[i].programName;
-                append_to_buffer_f(&ctx->cFileHandle, INDENT "[PROGRAM_%s] = { \"%s\" },\n", programName, programName);
+        append_to_buffer_f(&mts->cFileHandle, "const struct SM_ProgramInfo smProgramInfo[NUM_PROGRAM_KINDS] = {\n");
+        for (int i = 0; i < ctx->numPrograms; i++) {
+                const char *programName = ctx->programInfo[i].programName;
+                append_to_buffer_f(&mts->cFileHandle, INDENT "[PROGRAM_%s] = { \"%s\" },\n", programName, programName);
         }
-        append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "};\n\n");
 
-        append_to_buffer_f(&ctx->cFileHandle, "const struct SM_ShaderInfo smShaderInfo[NUM_SHADER_KINDS] = {\n");
+        append_to_buffer_f(&mts->cFileHandle, "const struct SM_ShaderInfo smShaderInfo[NUM_SHADER_KINDS] = {\n");
 
 
 #if 0 // TODO: shadef filepath is no longer available. Reorganize file reading!
@@ -279,47 +278,47 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 FREE_MEMORY(&fullyQualifiedFilepath);
         }
 #endif
-        append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "};\n\n");
         
-        append_to_buffer_f(&ctx->cFileHandle, "const struct SM_LinkInfo smLinkInfo[] = {\n");
-        for (int i = 0; i < ast->numLinks; i++) {
-                //int programIndex = ast->linkItems[i].resolvedProgramIndex;
-                //int shaderIndex = ast->linkItems[i].resolvedShaderIndex;
-                const char *programName = ast->programInfo[ast->linkInfo[i].programIndex].programName;
-                const char *shaderName = ast->shaderInfo[ast->linkInfo[i].shaderIndex].shaderName;
-                append_to_buffer_f(&ctx->cFileHandle, INDENT "{ PROGRAM_%s, SHADER_%s },\n", programName, shaderName);
+        append_to_buffer_f(&mts->cFileHandle, "const struct SM_LinkInfo smLinkInfo[] = {\n");
+        for (int i = 0; i < ctx->numLinks; i++) {
+                int programIndex = ctx->linkInfo[i].programIndex;
+                int shaderIndex = ctx->linkInfo[i].shaderIndex;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *shaderName = ctx->shaderInfo[shaderIndex].shaderName;
+                append_to_buffer_f(&mts->cFileHandle, INDENT "{ PROGRAM_%s, SHADER_%s },\n", programName, shaderName);
         }
-        append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
-        append_to_buffer_f(&ctx->cFileHandle, "const int numLinkInfos = sizeof smLinkInfo / sizeof smLinkInfo[0];\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "};\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "const int numLinkInfos = sizeof smLinkInfo / sizeof smLinkInfo[0];\n\n");
 
-        append_to_buffer_f(&ctx->cFileHandle, "const struct SM_UniformInfo smUniformInfo[NUM_UNIFORM_KINDS] = {\n");
+        append_to_buffer_f(&mts->cFileHandle, "const struct SM_UniformInfo smUniformInfo[NUM_UNIFORM_KINDS] = {\n");
 
-        for (int i = 0; i < ast->numProgramUniforms; i++) {
-                int programIndex = ast->programUniforms[i].programIndex;
-                int primtypeKind = ast->programUniforms[i].typeKind;
-                const char *programName = ast->programInfo[programIndex].programName;
-                const char *uniformName = ast->programUniforms[i].uniformName;
+        for (int i = 0; i < ctx->numProgramUniforms; i++) {
+                int programIndex = ctx->programUniforms[i].programIndex;
+                int primtypeKind = ctx->programUniforms[i].typeKind;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *uniformName = ctx->programUniforms[i].uniformName;
                 const char *typeName = PRIMTYPE_to_GRAFIKUNIFORMTYPE[primtypeKind];
                 ENSURE(typeName != NULL);
-                append_to_buffer_f(&ctx->cFileHandle, INDENT "[UNIFORM_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
+                append_to_buffer_f(&mts->cFileHandle, INDENT "[UNIFORM_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
                         programName, uniformName, programName, typeName, uniformName);
         }
-        append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "};\n\n");
 
-        append_to_buffer_f(&ctx->cFileHandle, "const struct SM_AttributeInfo smAttributeInfo[NUM_ATTRIBUTE_KINDS] = {\n");
-        for (int i = 0; i < ast->numProgramAttributes; i++) {
-                int programIndex = ast->programAttributes[i].programIndex;
-                int primtypeKind = ast->programAttributes[i].typeKind;
-                const char *programName = ast->programInfo[programIndex].programName;
-                const char *attributeName = ast->programAttributes[i].attributeName;
+        append_to_buffer_f(&mts->cFileHandle, "const struct SM_AttributeInfo smAttributeInfo[NUM_ATTRIBUTE_KINDS] = {\n");
+        for (int i = 0; i < ctx->numProgramAttributes; i++) {
+                int programIndex = ctx->programAttributes[i].programIndex;
+                int primtypeKind = ctx->programAttributes[i].typeKind;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *attributeName = ctx->programAttributes[i].attributeName;
                 const char *typeName = PRIMTYPE_to_GRAFIKATTRIBUTETYPE[primtypeKind];
                 ENSURE(typeName != NULL);
-                append_to_buffer_f(&ctx->cFileHandle, INDENT "[ATTRIBUTE_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
+                append_to_buffer_f(&mts->cFileHandle, INDENT "[ATTRIBUTE_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
                         programName, attributeName, programName, typeName, attributeName);
         }
-        append_to_buffer_f(&ctx->cFileHandle, "};\n\n");
+        append_to_buffer_f(&mts->cFileHandle, "};\n\n");
 
-        append_to_buffer_f(&ctx->hFileHandle,
+        append_to_buffer_f(&mts->hFileHandle,
                 "extern GfxShader gfxShader[NUM_SHADER_KINDS];\n"
                 "extern GfxProgram gfxProgram[NUM_PROGRAM_KINDS];\n"
                 "extern GfxUniformLocation gfxUniformLocation[NUM_UNIFORM_KINDS];\n"
@@ -327,7 +326,7 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 "\n"
         );
 
-        append_to_buffer_f(&ctx->cFileHandle,
+        append_to_buffer_f(&mts->cFileHandle,
                 "GfxProgram gfxProgram[NUM_PROGRAM_KINDS];\n"
                 "GfxShader gfxShader[NUM_SHADER_KINDS];\n"
                 "GfxUniformLocation gfxUniformLocation[NUM_UNIFORM_KINDS];\n"
@@ -335,7 +334,7 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 "\n"
         );
 
-        append_to_buffer_f(&ctx->cFileHandle,
+        append_to_buffer_f(&mts->cFileHandle,
                 "const struct SM_Description smDescription = {\n"
                 INDENT ".programInfo = smProgramInfo,\n"
                 INDENT ".shaderInfo = smShaderInfo,\n"
@@ -356,16 +355,16 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 "};\n\n"
         );
 
-        for (int i = 0; i < ast->numProgramUniforms; i++) {
-                int programIndex = ast->programUniforms[i].programIndex;
-                int primtypeKind = ast->programUniforms[i].typeKind;
-                const char *programName = ast->programInfo[programIndex].programName;
-                if (i == 0 || programIndex != ast->programUniforms[i - 1].programIndex) {
-                        append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
-                        append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_primitive_with_GfxProgram(gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
+        for (int i = 0; i < ctx->numProgramUniforms; i++) {
+                int programIndex = ctx->programUniforms[i].programIndex;
+                int primtypeKind = ctx->programUniforms[i].typeKind;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                if (i == 0 || programIndex != ctx->programUniforms[i - 1].programIndex) {
+                        append_to_buffer_f(&mts->hFileHandle, "static inline void %sShader_render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
+                        append_to_buffer_f(&mts->hFileHandle, "static inline void %sShader_render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_primitive_with_GfxProgram(gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
                 }
-                const char *uniformName = ast->programUniforms[i].uniformName;
-                append_to_buffer_f(&ctx->hFileHandle, "static inline void %sShader_set_%s", programName, uniformName);
+                const char *uniformName = ctx->programUniforms[i].uniformName;
+                append_to_buffer_f(&mts->hFileHandle, "static inline void %sShader_set_%s", programName, uniformName);
                 const char *fmt;
                 switch (primtypeKind) {
                 case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
@@ -378,24 +377,24 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 case PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
                 default: fatal_f("Not implemented!");
                 }
-                append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
+                append_to_buffer_f(&mts->hFileHandle, fmt, programName, programName, uniformName);
         }
 
-        append_to_buffer_f(&ctx->hFileHandle,
+        append_to_buffer_f(&mts->hFileHandle,
                 "\n"
                 "\n"
                 "#ifdef __cplusplus\n\n");
-        for (int i = 0; i < ast->numProgramUniforms; i++) {
-                int programIndex = ast->programUniforms[i].programIndex;
-                int primtypeKind = ast->programUniforms[i].typeKind;
-                const char *programName = ast->programInfo[programIndex].programName;
-                const char *uniformName = ast->programUniforms[i].uniformName;
-                if (i == 0 || programIndex != ast->programUniforms[i - 1].programIndex) {
-                        append_to_buffer_f(&ctx->hFileHandle, "static struct {\n");
-                        append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
-                        append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(int gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
+        for (int i = 0; i < ctx->numProgramUniforms; i++) {
+                int programIndex = ctx->programUniforms[i].programIndex;
+                int primtypeKind = ctx->programUniforms[i].typeKind;
+                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *uniformName = ctx->programUniforms[i].uniformName;
+                if (i == 0 || programIndex != ctx->programUniforms[i - 1].programIndex) {
+                        append_to_buffer_f(&mts->hFileHandle, "static struct {\n");
+                        append_to_buffer_f(&mts->hFileHandle, INDENT "static inline void render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
+                        append_to_buffer_f(&mts->hFileHandle, INDENT "static inline void render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(int gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
                 }
-                append_to_buffer_f(&ctx->hFileHandle, INDENT "static inline void set_%s", uniformName);
+                append_to_buffer_f(&mts->hFileHandle, INDENT "static inline void set_%s", uniformName);
                 const char *fmt;
                 switch (primtypeKind) {
                 case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
@@ -407,11 +406,11 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
                 case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
                 default: fatal_f("Not implemented!");
                 }
-                append_to_buffer_f(&ctx->hFileHandle, fmt, programName, programName, uniformName);
-                if (i + 1 == ast->numProgramUniforms || programIndex != ast->programUniforms[i + 1].programIndex)
-                        append_to_buffer_f(&ctx->hFileHandle, "} %sShader;\n\n", programName);
+                append_to_buffer_f(&mts->hFileHandle, fmt, programName, programName, uniformName);
+                if (i + 1 == ctx->numProgramUniforms || programIndex != ctx->programUniforms[i + 1].programIndex)
+                        append_to_buffer_f(&mts->hFileHandle, "} %sShader;\n\n", programName);
         }
-        append_to_buffer_f(&ctx->hFileHandle, "#endif // #ifdef __cplusplus\n\n");
+        append_to_buffer_f(&mts->hFileHandle, "#endif // #ifdef __cplusplus\n\n");
 
 
 #if 0
@@ -445,7 +444,7 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
         }
 #endif
 
-        append_to_buffer_f(&ctx->hFileHandle,
+        append_to_buffer_f(&mts->hFileHandle,
                 "#ifdef __cplusplus\n"
                 "} // extern \"C\" {\n"
                 "#endif\n"
@@ -453,11 +452,11 @@ void write_c_interface(struct Ast *ast, const char *autogenDirpath)
 
 
         make_directory_if_not_exists(autogenDirpath);
-        commit_to_file(&ctx->hFileHandle, ctx->hFilepath.data);
-        commit_to_file(&ctx->cFileHandle, ctx->cFilepath.data);
+        commit_to_file(&mts->hFileHandle, mts->hFilepath.data);
+        commit_to_file(&mts->cFileHandle, mts->cFilepath.data);
 
-        teardown_buffer(&ctx->hFilepath);
-        teardown_buffer(&ctx->cFilepath);
-        teardown_buffer(&ctx->hFileHandle);
-        teardown_buffer(&ctx->cFileHandle);
+        teardown_buffer(&mts->hFilepath);
+        teardown_buffer(&mts->cFilepath);
+        teardown_buffer(&mts->hFileHandle);
+        teardown_buffer(&mts->cFileHandle);
 }
