@@ -67,5 +67,5 @@ struct ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct ShaderfileAst
 
 struct ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx)
 {
-        return add_new_toplevel_node_to_shaderfileast(&ctx->shaderfileAsts[ctx->currentFileIndex]);
+        return add_new_toplevel_node_to_shaderfileast(&ctx->shaderfileAsts[ctx->currentShaderIndex]);
 }

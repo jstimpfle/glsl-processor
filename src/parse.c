@@ -4,6 +4,38 @@
 #include <glsl-processor/memoryalloc.h>
 #include <glsl-processor/logging.h>
 
+static const struct {
+        int character;
+        int tokenKind;
+} tokInfo1[] = {
+        { '(', TOKEN_LEFTPAREN },
+        { ')', TOKEN_RIGHTPAREN },
+        { '{', TOKEN_LEFTBRACE },
+        { '}', TOKEN_RIGHTBRACE },
+        { '.', TOKEN_DOT },
+        { ',', TOKEN_COMMA },
+        { ';', TOKEN_SEMICOLON },
+        { '%', TOKEN_PERCENT },
+        { '!', TOKEN_NOT },
+};
+
+static const struct {
+        int character1;
+        int character2;
+        int tokenKind1;
+        int tokenKind2;
+} tokInfo2[] = {
+        { '<', '=', TOKEN_LT, TOKEN_LE },
+        { '>', '=', TOKEN_GT, TOKEN_GE },
+        { '=', '=', TOKEN_EQUALS, TOKEN_DOUBLEEQUALS },
+        { '&', '&', TOKEN_AMPERSAND, TOKEN_DOUBLEAMPERSAND },
+        { '|', '|', TOKEN_PIPE, TOKEN_DOUBLEPIPE },
+        { '+', '=', TOKEN_PLUS, TOKEN_PLUSEQUALS },
+        { '-', '=', TOKEN_MINUS, TOKEN_MINUSEQUALS },
+        { '*', '=', TOKEN_STAR, TOKEN_STAREQUALS },
+        { '/', '=', TOKEN_SLASH, TOKEN_SLASHEQUALS },
+};
+
 static void compute_line_and_column(struct GP_Ctx *ctx, int *outLine, int *outColumn)
 {
         int line = 1;
@@ -34,7 +66,7 @@ void NORETURN _fatal_parse_error_fv(
         gp_fatal_end();
 }
 
-void NORETURN _fatal_parse_error_f(
+static void NORETURN _fatal_parse_error_f(
                 struct LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, ...)
 {
         va_list ap;
@@ -89,39 +121,7 @@ static void append_to_tokenbuffer(struct GP_Ctx *ctx, int character)
         ctx->tokenBuffer[pos + 1] = '\0';
 }
 
-static const struct {
-        int character;
-        int tokenKind;
-} tokInfo1[] = {
-        { '(', TOKEN_LEFTPAREN },
-        { ')', TOKEN_RIGHTPAREN },
-        { '{', TOKEN_LEFTBRACE },
-        { '}', TOKEN_RIGHTBRACE },
-        { '.', TOKEN_DOT },
-        { ',', TOKEN_COMMA },
-        { ';', TOKEN_SEMICOLON },
-        { '%', TOKEN_PERCENT },
-        { '!', TOKEN_NOT },
-};
-
-static const struct {
-        int character1;
-        int character2;
-        int tokenKind1;
-        int tokenKind2;
-} tokInfo2[] = {
-        { '<', '=', TOKEN_LT, TOKEN_LE },
-        { '>', '=', TOKEN_GT, TOKEN_GE },
-        { '=', '=', TOKEN_EQUALS, TOKEN_DOUBLEEQUALS },
-        { '&', '&', TOKEN_AMPERSAND, TOKEN_DOUBLEAMPERSAND },
-        { '|', '|', TOKEN_PIPE, TOKEN_DOUBLEPIPE },
-        { '+', '=', TOKEN_PLUS, TOKEN_PLUSEQUALS },
-        { '-', '=', TOKEN_MINUS, TOKEN_MINUSEQUALS },
-        { '*', '=', TOKEN_STAR, TOKEN_STAREQUALS },
-        { '/', '=', TOKEN_SLASH, TOKEN_SLASHEQUALS },
-};
-
-int look_token(struct GP_Ctx *ctx)
+static int look_token(struct GP_Ctx *ctx)
 {
         if (ctx->haveSavedToken)
                 return 1;
@@ -284,13 +284,13 @@ ok:
         return 1;
 }
 
-void consume_token(struct GP_Ctx *ctx)
+static void consume_token(struct GP_Ctx *ctx)
 {
         ENSURE(ctx->haveSavedToken);
         ctx->haveSavedToken = 0;
 }
 
-int is_keyword(struct GP_Ctx *ctx, const char *keyword)
+static int is_keyword(struct GP_Ctx *ctx, const char *keyword)
 {
         ENSURE(ctx->haveSavedToken);
         if (ctx->tokenKind != TOKEN_NAME)
@@ -298,7 +298,7 @@ int is_keyword(struct GP_Ctx *ctx, const char *keyword)
         return !strcmp(ctx->tokenBuffer, keyword);
 }
 
-int is_known_type_name(struct GP_Ctx *ctx)
+static int is_known_type_name(struct GP_Ctx *ctx)
 {
         for (int i = 0; i < GP_NUM_PRIMTYPE_KINDS; i++)
                 if (!strcmp(ctx->tokenBuffer, gp_primtypeString[i]))
@@ -306,7 +306,7 @@ int is_known_type_name(struct GP_Ctx *ctx)
         return 0;
 }
 
-int is_binop_token(struct GP_Ctx *ctx, int *binopKind)
+static int is_binop_token(struct GP_Ctx *ctx, int *binopKind)
 {
         ENSURE(ctx->haveSavedToken);
         for (int i = 0; i < gp_numBinopTokens; i++) {
@@ -615,7 +615,6 @@ static void parse_FuncDefn_or_FuncDecl(struct GP_Ctx *ctx)
                 while (!look_token_kind(ctx, TOKEN_RIGHTBRACE))
                         parse_stmt(ctx);
                 parse_simple_token(ctx, TOKEN_RIGHTBRACE);
-
                 struct FuncDefn *funcDefn = create_funcdefn(ctx);
                 funcDefn->name = name;
                 funcDefn->returnTypeExpr = returnTypeExpr;
@@ -625,8 +624,6 @@ static void parse_FuncDefn_or_FuncDecl(struct GP_Ctx *ctx)
                 struct ToplevelNode *node = add_new_toplevel_node(ctx);
                 node->directiveKind = DIRECTIVE_FUNCDEFN;
                 node->data.tFuncdefn = funcDefn;
-                /*
-                */
         }
 }
 
@@ -665,9 +662,9 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
         ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
         memcpy(fa->filepath, fileID, filepathLength + 1);
         // switch
-        ctx->currentFileIndex = fileIndex;
+        ctx->currentShaderIndex = shaderIndex;
         }
-        
+
         while (look_token(ctx)) {
                 if (is_keyword(ctx, "uniform")) {
                         struct ToplevelNode *node = add_new_toplevel_node(ctx);

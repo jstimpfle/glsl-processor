@@ -55,7 +55,7 @@ static inline void _sp_delete_from_array(char **ptr, int *numElems, int idx, int
         int length = (*numElems - (idx + 1)) * elemSize;
         memmove(ptr + off1, ptr + off2, length);
         *numElems -= 1;
-        realloc_memory(ptr, *numElems, elemSize);
+        realloc_memory((void**)ptr, *numElems, elemSize);
 }
 
 #define SP_DELETE_FROM_ARRAY(pptr, pNumElems, idx) _sp_delete_from_array((char**)(pptr), (pNumElems), (idx), sizeof **(pptr))
@@ -235,6 +235,7 @@ void sp_to_gp(struct SP_Ctx *sp, struct GP_Ctx *ctx)
         REALLOC_MEMORY(&ctx->fileInfo, ctx->numFiles);
         REALLOC_MEMORY(&ctx->programInfo, ctx->numPrograms);
         REALLOC_MEMORY(&ctx->shaderInfo, ctx->numShaders);
+        REALLOC_MEMORY(&ctx->shaderfileAsts, ctx->numShaders); //!!!
         REALLOC_MEMORY(&ctx->linkInfo, ctx->numLinks);
         for (int i = 0; i < sp->numFiles; i++) {
                 ctx->fileInfo[i].fileID = sp->files[i].fileID;
@@ -255,6 +256,4 @@ void sp_to_gp(struct SP_Ctx *sp, struct GP_Ctx *ctx)
                 ctx->linkInfo[i].programIndex = programIndex;
                 ctx->linkInfo[i].shaderIndex = shaderIndex;
         }
-        //XXX!!
-        REALLOC_MEMORY(&ctx->shaderfileAsts, ctx->numShaders);
 }

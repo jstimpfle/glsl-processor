@@ -13,7 +13,7 @@ struct GP_Ctx {
         int numLinks;
 
         struct ShaderfileAst *shaderfileAsts;
-        int currentFileIndex;  // global state for simpler code
+        int currentShaderIndex;  // global state for simpler code
 
         /* This stuff here is completely computed from the parsed data. */
         struct ProgramUniform *programUniforms;
