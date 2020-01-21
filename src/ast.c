@@ -21,11 +21,11 @@ enum {
 
 static int poolObjectSize[NUM_POOL_KINDS] = {
 #define MAKE(k, t) [k] = sizeof (t)
-        MAKE(POOL_UNIFORMDECL, struct UniformDecl),
-        MAKE(POOL_VARIABLEDECL, struct VariableDecl),
-        MAKE(POOL_TYPEEXPR, struct TypeExpr),
-        MAKE(POOL_FUNCDECL, struct FuncDecl),
-        MAKE(POOL_FUNCDEFN, struct FuncDefn),
+        MAKE(POOL_UNIFORMDECL, struct GP_UniformDecl),
+        MAKE(POOL_VARIABLEDECL, struct GP_VariableDecl),
+        MAKE(POOL_TYPEEXPR, struct GP_TypeExpr),
+        MAKE(POOL_FUNCDECL, struct GP_FuncDecl),
+        MAKE(POOL_FUNCDEFN, struct GP_FuncDefn),
 #undef MAKE
 };
 
@@ -51,13 +51,13 @@ static void *allocate_pooled_object(struct GP_Ctx *ctx, int poolKind)
         return &container->arrayMember[idx]; \
 }
 
-DEFINE_ALLOCATOR_FUNCTION(struct TypeExpr, create_typeexpr, POOL_TYPEEXPR)
-DEFINE_ALLOCATOR_FUNCTION(struct UniformDecl, create_uniformdecl, POOL_UNIFORMDECL)
-DEFINE_ALLOCATOR_FUNCTION(struct VariableDecl, create_variabledecl, POOL_VARIABLEDECL)
-DEFINE_ALLOCATOR_FUNCTION(struct FuncDecl, create_funcdecl, POOL_FUNCDECL)
-DEFINE_ALLOCATOR_FUNCTION(struct FuncDefn, create_funcdefn, POOL_FUNCDEFN)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_TypeExpr, create_typeexpr, POOL_TYPEEXPR)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_UniformDecl, create_uniformdecl, POOL_UNIFORMDECL)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_VariableDecl, create_variabledecl, POOL_VARIABLEDECL)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_FuncDecl, create_funcdecl, POOL_FUNCDECL)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_FuncDefn, create_funcdefn, POOL_FUNCDEFN)
 
-struct ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct ShaderfileAst *fa)
+struct GP_ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct GP_ShaderfileAst *fa)
 {
         int idx = fa->numToplevelNodes ++;
         REALLOC_MEMORY(&fa->toplevelNodes, fa->numToplevelNodes);
@@ -65,7 +65,7 @@ struct ToplevelNode *add_new_toplevel_node_to_shaderfileast(struct ShaderfileAst
         return fa->toplevelNodes[idx];
 }
 
-struct ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx)
+struct GP_ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx)
 {
         return add_new_toplevel_node_to_shaderfileast(&ctx->shaderfileAsts[ctx->currentShaderIndex]);
 }

@@ -162,28 +162,28 @@ static void add_enum_item_3(struct MtsCtx *mts, const char *name1, const char *n
 }
 
 static const char *const PRIMTYPE_to_GRAFIKATTRIBUTETYPE[GP_NUM_PRIMTYPE_KINDS] = {
-        [PRIMTYPE_BOOL] = "GRAFIKATTRTYPE_BOOL",
-        [PRIMTYPE_INT] = "GRAFIKATTRTYPE_INT",
-        [PRIMTYPE_UINT] = "GRAFIKATTRTYPE_UINT",
-        [PRIMTYPE_FLOAT] = "GRAFIKATTRTYPE_FLOAT",
-        [PRIMTYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
-        [PRIMTYPE_VEC2] = "GRAFIKATTRTYPE_VEC2",
-        [PRIMTYPE_VEC3] = "GRAFIKATTRTYPE_VEC3",
-        [PRIMTYPE_VEC4] = "GRAFIKATTRTYPE_VEC4",
+        [GP_PRIMTYPE_BOOL] = "GRAFIKATTRTYPE_BOOL",
+        [GP_PRIMTYPE_INT] = "GRAFIKATTRTYPE_INT",
+        [GP_PRIMTYPE_UINT] = "GRAFIKATTRTYPE_UINT",
+        [GP_PRIMTYPE_FLOAT] = "GRAFIKATTRTYPE_FLOAT",
+        [GP_PRIMTYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
+        [GP_PRIMTYPE_VEC2] = "GRAFIKATTRTYPE_VEC2",
+        [GP_PRIMTYPE_VEC3] = "GRAFIKATTRTYPE_VEC3",
+        [GP_PRIMTYPE_VEC4] = "GRAFIKATTRTYPE_VEC4",
 };
 
 static const char *const PRIMTYPE_to_GRAFIKUNIFORMTYPE[GP_NUM_PRIMTYPE_KINDS] = {
-        [PRIMTYPE_BOOL] = "GRAFIKUNIFORMTYPE_BOOL",
-        [PRIMTYPE_INT] = "GRAFIKUNIFORMTYPE_INT",
-        [PRIMTYPE_UINT] = "GRAFIKUNIFORMTYPE_UINT",
-        [PRIMTYPE_FLOAT] = "GRAFIKUNIFORMTYPE_FLOAT",
-        [PRIMTYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
-        [PRIMTYPE_VEC2] = "GRAFIKUNIFORMTYPE_VEC2",
-        [PRIMTYPE_VEC3] = "GRAFIKUNIFORMTYPE_VEC3",
-        [PRIMTYPE_VEC4] = "GRAFIKUNIFORMTYPE_VEC4",
-        [PRIMTYPE_MAT2] = "GRAFIKUNIFORMTYPE_MAT2",
-        [PRIMTYPE_MAT3] = "GRAFIKUNIFORMTYPE_MAT3",
-        [PRIMTYPE_MAT4] = "GRAFIKUNIFORMTYPE_MAT4",
+        [GP_PRIMTYPE_BOOL] = "GRAFIKUNIFORMTYPE_BOOL",
+        [GP_PRIMTYPE_INT] = "GRAFIKUNIFORMTYPE_INT",
+        [GP_PRIMTYPE_UINT] = "GRAFIKUNIFORMTYPE_UINT",
+        [GP_PRIMTYPE_FLOAT] = "GRAFIKUNIFORMTYPE_FLOAT",
+        [GP_PRIMTYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
+        [GP_PRIMTYPE_VEC2] = "GRAFIKUNIFORMTYPE_VEC2",
+        [GP_PRIMTYPE_VEC3] = "GRAFIKUNIFORMTYPE_VEC3",
+        [GP_PRIMTYPE_VEC4] = "GRAFIKUNIFORMTYPE_VEC4",
+        [GP_PRIMTYPE_MAT2] = "GRAFIKUNIFORMTYPE_MAT2",
+        [GP_PRIMTYPE_MAT3] = "GRAFIKUNIFORMTYPE_MAT3",
+        [GP_PRIMTYPE_MAT4] = "GRAFIKUNIFORMTYPE_MAT4",
 };
 
 void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
@@ -367,14 +367,14 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 append_to_buffer_f(&mts->hFileHandle, "static inline void %sShader_set_%s", programName, uniformName);
                 const char *fmt;
                 switch (primtypeKind) {
-                case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
-                case PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
-                case PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
-                case PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
-                case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
-                case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
-                case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
-                case PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
+                case GP_PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
+                case GP_PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
+                case GP_PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
+                case GP_PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
+                case GP_PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
+                case GP_PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
+                case GP_PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                case GP_PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
                 default: fatal_f("Not implemented!");
                 }
                 append_to_buffer_f(&mts->hFileHandle, fmt, programName, programName, uniformName);
@@ -397,13 +397,13 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 append_to_buffer_f(&mts->hFileHandle, INDENT "static inline void set_%s", uniformName);
                 const char *fmt;
                 switch (primtypeKind) {
-                case PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
-                case PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
-                case PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
-                case PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
-                case PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
-                case PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
-                case PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                case GP_PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
+                case GP_PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
+                case GP_PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
+                case GP_PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
+                case GP_PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
+                case GP_PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
+                case GP_PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
                 default: fatal_f("Not implemented!");
                 }
                 append_to_buffer_f(&mts->hFileHandle, fmt, programName, programName, uniformName);

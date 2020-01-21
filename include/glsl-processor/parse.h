@@ -3,21 +3,21 @@
 
 
 struct GP_Ctx {
-        struct FileInfo *fileInfo;
-        struct ProgramInfo *programInfo;
-        struct ShaderInfo *shaderInfo;
-        struct LinkInfo *linkInfo;
+        struct GP_FileInfo *fileInfo;
+        struct GP_ProgramInfo *programInfo;
+        struct GP_ShaderInfo *shaderInfo;
+        struct GP_LinkInfo *linkInfo;
         int numFiles;
         int numPrograms;
         int numShaders;
         int numLinks;
 
-        struct ShaderfileAst *shaderfileAsts;
+        struct GP_ShaderfileAst *shaderfileAsts;
         int currentShaderIndex;  // global state for simpler code
 
         /* This stuff here is completely computed from the parsed data. */
-        struct ProgramUniform *programUniforms;
-        struct ProgramAttribute *programAttributes;
+        struct GP_ProgramUniform *programUniforms;
+        struct GP_ProgramAttribute *programAttributes;
         int numProgramUniforms;
         int numProgramAttributes;
 

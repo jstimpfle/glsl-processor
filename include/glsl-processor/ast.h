@@ -11,255 +11,244 @@ enum {
 };
 
 enum {
-        TOKEN_EOF,
-        TOKEN_LITERAL,
-        TOKEN_NAME,
-        TOKEN_STRING,
-        TOKEN_LEFTPAREN,
-        TOKEN_RIGHTPAREN,
-        TOKEN_LEFTBRACE,
-        TOKEN_RIGHTBRACE,
-        TOKEN_DOT,
-        TOKEN_COMMA,
-        TOKEN_SEMICOLON,
-        TOKEN_PLUS,
-        TOKEN_MINUS,
-        TOKEN_STAR,
-        TOKEN_SLASH,
-        TOKEN_PERCENT,
-        TOKEN_EQUALS,
-        TOKEN_DOUBLEEQUALS,
-        TOKEN_PLUSEQUALS,
-        TOKEN_MINUSEQUALS,
-        TOKEN_STAREQUALS,
-        TOKEN_SLASHEQUALS,
-        TOKEN_NE,
-        TOKEN_LT,
-        TOKEN_LE,
-        TOKEN_GE,
-        TOKEN_GT,
-        TOKEN_NOT,
-        TOKEN_AMPERSAND,
-        TOKEN_DOUBLEAMPERSAND,
-        TOKEN_PIPE,
-        TOKEN_DOUBLEPIPE,
+        GP_TOKEN_EOF,
+        GP_TOKEN_LITERAL,
+        GP_TOKEN_NAME,
+        GP_TOKEN_STRING,
+        GP_TOKEN_LEFTPAREN,
+        GP_TOKEN_RIGHTPAREN,
+        GP_TOKEN_LEFTBRACE,
+        GP_TOKEN_RIGHTBRACE,
+        GP_TOKEN_DOT,
+        GP_TOKEN_COMMA,
+        GP_TOKEN_SEMICOLON,
+        GP_TOKEN_PLUS,
+        GP_TOKEN_MINUS,
+        GP_TOKEN_STAR,
+        GP_TOKEN_SLASH,
+        GP_TOKEN_PERCENT,
+        GP_TOKEN_EQUALS,
+        GP_TOKEN_DOUBLEEQUALS,
+        GP_TOKEN_PLUSEQUALS,
+        GP_TOKEN_MINUSEQUALS,
+        GP_TOKEN_STAREQUALS,
+        GP_TOKEN_SLASHEQUALS,
+        GP_TOKEN_NE,
+        GP_TOKEN_LT,
+        GP_TOKEN_LE,
+        GP_TOKEN_GE,
+        GP_TOKEN_GT,
+        GP_TOKEN_NOT,
+        GP_TOKEN_AMPERSAND,
+        GP_TOKEN_DOUBLEAMPERSAND,
+        GP_TOKEN_PIPE,
+        GP_TOKEN_DOUBLEPIPE,
         GP_NUM_TOKEN_KINDS
 };
 
 enum {
-        UNOP_NOT,
-        UNOP_NEGATE,
+        GP_UNOP_NOT,
+        GP_UNOP_NEGATE,
         GP_NUM_UNOP_KINDS,
 };
 
 enum {
-        BINOP_EQ,
-        BINOP_NE,
-        BINOP_LT,
-        BINOP_LE,
-        BINOP_GT,
-        BINOP_GE,
-        BINOP_PLUS,
-        BINOP_MINUS,
-        BINOP_MUL,
-        BINOP_DIV,
-        BINOP_MOD,
-        BINOP_ASSIGN,
-        BINOP_PLUSASSIGN,
-        BINOP_MINUSASSIGN,
-        BINOP_MULASSIGN,
-        BINOP_DIVASSIGN,
-        BINOP_BITAND,
-        BINOP_BITOR,
-        BINOP_LOGICALAND,
-        BINOP_LOGICALOR,
+        GP_BINOP_EQ,
+        GP_BINOP_NE,
+        GP_BINOP_LT,
+        GP_BINOP_LE,
+        GP_BINOP_GT,
+        GP_BINOP_GE,
+        GP_BINOP_PLUS,
+        GP_BINOP_MINUS,
+        GP_BINOP_MUL,
+        GP_BINOP_DIV,
+        GP_BINOP_MOD,
+        GP_BINOP_ASSIGN,
+        GP_BINOP_PLUSASSIGN,
+        GP_BINOP_MINUSASSIGN,
+        GP_BINOP_MULASSIGN,
+        GP_BINOP_DIVASSIGN,
+        GP_BINOP_BITAND,
+        GP_BINOP_BITOR,
+        GP_BINOP_LOGICALAND,
+        GP_BINOP_LOGICALOR,
         GP_NUM_BINOP_KINDS,
 };
 
 enum {
-        EXPR_LIT_NUM,
-        EXPR_BINOP,
-};
-
-enum {
-        PRIMTYPE_BOOL,
-        PRIMTYPE_INT,
-        PRIMTYPE_UINT,
-        PRIMTYPE_FLOAT,
-        PRIMTYPE_DOUBLE,
-        PRIMTYPE_VEC2,
-        PRIMTYPE_VEC3,
-        PRIMTYPE_VEC4,
-        PRIMTYPE_MAT2,
-        PRIMTYPE_MAT3,
-        PRIMTYPE_MAT4,
-        PRIMTYPE_SAMPLER2D,
+        GP_PRIMTYPE_BOOL,
+        GP_PRIMTYPE_INT,
+        GP_PRIMTYPE_UINT,
+        GP_PRIMTYPE_FLOAT,
+        GP_PRIMTYPE_DOUBLE,
+        GP_PRIMTYPE_VEC2,
+        GP_PRIMTYPE_VEC3,
+        GP_PRIMTYPE_VEC4,
+        GP_PRIMTYPE_MAT2,
+        GP_PRIMTYPE_MAT3,
+        GP_PRIMTYPE_MAT4,
+        GP_PRIMTYPE_SAMPLER2D,
         GP_NUM_PRIMTYPE_KINDS
 };
 
-enum {
-        STMT_EXPR,
-        STMT_RETURN,
-        STMT_IF,
-        STMT_IFELSE,
-};
 
-typedef int Expr;
-typedef int Stmt;
-typedef int TypeExpr;
+typedef int GP_Expr;
+typedef int GP_Stmt;
+typedef int GP_TypeExpr;
 
-struct LitExpr {
+struct GP_LitExpr {
         double floatingValue;  // TODO better representation
 };
 
-struct BinopExpr {
-        Expr exprLeft;
-        Expr exprRight;
+struct GP_BinopExpr {
+        GP_Expr exprLeft;
+        GP_Expr exprRight;
 };
 
-struct ExprNode {
+struct GP_ExprNode {
         int exprKind;
         union {
-                struct LitExpr tLit;
-                struct BinopExpr tBinop;
+                struct GP_LitExpr tLit;
+                struct GP_BinopExpr tBinop;
         } data;
 };
 
-struct ExprStmt {
-        Expr expr;
+struct GP_ExprStmt {
+        GP_Expr expr;
 };
 
-struct ReturnStmt {
-        Expr expr;
+struct GP_ReturnStmt {
+        GP_Expr expr;
 };
 
-struct IfStmt {
-        Expr condExpr;
-        Stmt stmt;
+struct GP_IfStmt {
+        GP_Expr condExpr;
+        GP_Stmt stmt;
 };
 
-struct IfElseStmt {
-        Expr condExpr;
-        Stmt ifBranchStmt;
-        Stmt elseBranchStmt;
+struct GP_IfElseStmt {
+        GP_Expr condExpr;
+        GP_Stmt ifBranchStmt;
+        GP_Stmt elseBranchStmt;
 };
 
-struct StmtNode {
+struct GP_StmtNode {
         int stmtKind;
         union {
-                struct ExprStmt tExpr;
-                struct ReturnStmt tReturn;
-                struct IfStmt tIf;
-                struct IfElseStmt tIfElse;
+                struct GP_ExprStmt tExpr;
+                struct GP_ReturnStmt tReturn;
+                struct GP_IfStmt tIf;
+                struct GP_IfElseStmt tIfElse;
         } data;
 };
 
 /* we probably should get rid of this type. GLSL has - to my knowledge - only
 a fixed number of types (which are all built in) and some parts of the code
 even rely on that fact. */
-struct TypeExpr {
+struct GP_TypeExpr {
         int primtypeKind;
 };
 
-struct UniformDecl {
+struct GP_UniformDecl {
         char *uniDeclName;
-        struct TypeExpr *uniDeclTypeExpr;
+        struct GP_TypeExpr *uniDeclTypeExpr;
 };
 
-struct VariableDecl {
+struct GP_VariableDecl {
         int inOrOut;
-        struct TypeExpr *typeExpr;
+        struct GP_TypeExpr *typeExpr;
         char *name;
 };
 
-struct FuncDecl {
+struct GP_FuncDecl {
         char *name;
-        struct TypeExpr *returnTypeExpr;
-        struct TypeExpr **argTypeExprs;
+        struct GP_TypeExpr *returnTypeExpr;
+        struct GP_TypeExpr **argTypeExprs;
         char **argNames;
         int numArgs;
 };
 
-struct FuncDefn {
+struct GP_FuncDefn {
         char *name;
-        struct TypeExpr *returnTypeExpr;
-        struct TypeExpr **argTypeExprs;
+        struct GP_TypeExpr *returnTypeExpr;
+        struct GP_TypeExpr **argTypeExprs;
         char **argNames;
         int numArgs;
-        Stmt bodyStmt;
+        GP_Stmt bodyStmt;
 };
 
 
 enum {
-        DIRECTIVE_UNIFORM,
-        DIRECTIVE_VARIABLE,  // "in" or "out"
-        DIRECTIVE_FUNCDECL,
-        DIRECTIVE_FUNCDEFN,
+        GP_DIRECTIVE_UNIFORM,
+        GP_DIRECTIVE_VARIABLE,  // "in" or "out"
+        GP_DIRECTIVE_FUNCDECL,
+        GP_DIRECTIVE_FUNCDEFN,
 };
 
-struct ToplevelNode {
+struct GP_ToplevelNode {
         int directiveKind;
         union {
-                struct UniformDecl *tUniform;
-                struct VariableDecl *tVariable;
-                struct FuncDecl *tFuncdecl;
-                struct FuncDefn *tFuncdefn;
+                struct GP_UniformDecl *tUniform;
+                struct GP_VariableDecl *tVariable;
+                struct GP_FuncDecl *tFuncdecl;
+                struct GP_FuncDefn *tFuncdefn;
         } data;
 };
 
-struct UnopInfo {
+struct GP_UnopInfo {
         char *text;
 };
 
-struct BinopInfo {
+struct GP_BinopInfo {
         char *text;
 };
 
-struct UnopTokenInfo {
+struct GP_UnopTokenInfo {
         int tokenKind;
         int unopKind;
 };
 
-struct BinopTokenInfo {
+struct GP_BinopTokenInfo {
         int tokenKind;
         int binopKind;
 };
 
-struct ShaderfileAst {
+struct GP_ShaderfileAst {
         char *filepath;
 
         // For now, for simplicity and pointer stability, an array of pointers...
-        struct ToplevelNode **toplevelNodes;
+        struct GP_ToplevelNode **toplevelNodes;
         int numToplevelNodes;
 };
 
-struct FileInfo {
+struct GP_FileInfo {
         char *fileID;
         char *contents;
         int size;
 };
 
-struct ProgramInfo {
+struct GP_ProgramInfo {
         char *programName;
 };
 
-struct ShaderInfo {
+struct GP_ShaderInfo {
         char *shaderName;
         int shaderType;
 };
 
-struct LinkInfo {
+struct GP_LinkInfo {
         int programIndex;
         int shaderIndex;
 };
 
-struct ProgramUniform {
+struct GP_ProgramUniform {
         int programIndex;
         int typeKind;
         char *uniformName;
 };
 
-struct ProgramAttribute {
+struct GP_ProgramAttribute {
         int programIndex;
         int typeKind;
         char *attributeName;
@@ -269,22 +258,22 @@ extern const char *const gp_tokenKindString[GP_NUM_TOKEN_KINDS];
 extern const char *const gp_primtypeKindString[GP_NUM_PRIMTYPE_KINDS];
 extern const char *const gp_primtypeString[GP_NUM_PRIMTYPE_KINDS];
 extern const char *const gp_shadertypeKindString[GP_NUM_SHADERTYPE_KINDS];
-extern const struct UnopInfo gp_unopInfo[GP_NUM_UNOP_KINDS];
-extern const struct UnopTokenInfo gp_unopTokenInfo[];
-extern const struct BinopInfo gp_binopInfo[GP_NUM_BINOP_KINDS];
-extern const struct BinopTokenInfo gp_binopTokenInfo[];
+extern const struct GP_UnopInfo gp_unopInfo[GP_NUM_UNOP_KINDS];
+extern const struct GP_UnopTokenInfo gp_unopTokenInfo[];
+extern const struct GP_BinopInfo gp_binopInfo[GP_NUM_BINOP_KINDS];
+extern const struct GP_BinopTokenInfo gp_binopTokenInfo[];
 extern const int gp_numUnopToken;
 extern const int gp_numBinopTokens;
 
 char *alloc_string(struct GP_Ctx *ctx, const char *string);
-struct TypeExpr *create_typeexpr(struct GP_Ctx *ctx);
-struct UniformDecl *create_uniformdecl(struct GP_Ctx *ctx);
-struct VariableDecl *create_variabledecl(struct GP_Ctx *ctx);
-struct FuncDecl *create_funcdecl(struct GP_Ctx *ctx);
-struct FuncDefn *create_funcdefn(struct GP_Ctx *ctx);
+struct GP_TypeExpr *create_typeexpr(struct GP_Ctx *ctx);
+struct GP_UniformDecl *create_uniformdecl(struct GP_Ctx *ctx);
+struct GP_VariableDecl *create_variabledecl(struct GP_Ctx *ctx);
+struct GP_FuncDecl *create_funcdecl(struct GP_Ctx *ctx);
+struct GP_FuncDefn *create_funcdefn(struct GP_Ctx *ctx);
 
-struct ToplevelNode *add_new_toplevel_node_to_fileast(struct ShaderfileAst *fileAst);
-struct ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx);
+struct GP_ToplevelNode *add_new_toplevel_node_to_fileast(struct GP_ShaderfileAst *fileAst);
+struct GP_ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx);
 
 void gp_setup(struct GP_Ctx *ctx);
 void gp_teardown(struct GP_Ctx *ctx);

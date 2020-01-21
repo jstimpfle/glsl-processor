@@ -5,8 +5,8 @@
 
 static int gp_compare_ProgramUniforms(const void *a, const void *b)
 {
-        const struct ProgramUniform *x = a;
-        const struct ProgramUniform *y = b;
+        const struct GP_ProgramUniform *x = a;
+        const struct GP_ProgramUniform *y = b;
         if (x->programIndex != y->programIndex)
                 return (x->programIndex > y->programIndex) - (x->programIndex < y->programIndex);
         return strcmp(x->uniformName, y->uniformName);
@@ -14,8 +14,8 @@ static int gp_compare_ProgramUniforms(const void *a, const void *b)
 
 static int gp_compare_ProgramAttributes(const void *a, const void *b)
 {
-        const struct ProgramAttribute *x = a;
-        const struct ProgramAttribute *y = b;
+        const struct GP_ProgramAttribute *x = a;
+        const struct GP_ProgramAttribute *y = b;
         if (x->programIndex != y->programIndex)
                 return (x->programIndex > y->programIndex) - (x->programIndex < y->programIndex);
         return strcmp(x->attributeName, y->attributeName);
@@ -24,13 +24,13 @@ static int gp_compare_ProgramAttributes(const void *a, const void *b)
 void gp_process(struct GP_Ctx *ctx)
 {
         for (int i = 0; i < ctx->numFiles; i++) {
-                struct ShaderfileAst *fa = &ctx->shaderfileAsts[i];
+                struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[i];
                 for (int j = 0; j < fa->numToplevelNodes; j++) {
-                        struct ToplevelNode *node = fa->toplevelNodes[j];
-                        if (node->directiveKind == DIRECTIVE_UNIFORM) {
-                                struct UniformDecl *decl = node->data.tUniform;
+                        struct GP_ToplevelNode *node = fa->toplevelNodes[j];
+                        if (node->directiveKind == GP_DIRECTIVE_UNIFORM) {
+                                struct GP_UniformDecl *decl = node->data.tUniform;
                                 for (int k = 0; k < ctx->numLinks; k++) {
-                                        struct LinkInfo *linkInfo = &ctx->linkInfo[k];
+                                        struct GP_LinkInfo *linkInfo = &ctx->linkInfo[k];
                                         if (linkInfo->shaderIndex == i) {
                                                 int programIndex = linkInfo->programIndex;
                                                 int uniformIndex = ctx->numProgramUniforms++;
@@ -41,15 +41,15 @@ void gp_process(struct GP_Ctx *ctx)
                                         }
                                 }
                         }
-                        else if (node->directiveKind == DIRECTIVE_VARIABLE) {
-                                struct VariableDecl *decl = node->data.tVariable;
+                        else if (node->directiveKind == GP_DIRECTIVE_VARIABLE) {
+                                struct GP_VariableDecl *decl = node->data.tVariable;
                                 // An attribute is an IN variable in a vertex shader
                                 if (ctx->shaderInfo[i].shaderType != GP_SHADERTYPE_VERTEX)
                                         continue;
                                 if (decl->inOrOut != 0 /* IN */)
                                         continue;
                                 for (int k = 0; k < ctx->numLinks; k++) {
-                                        struct LinkInfo *linkInfo = &ctx->linkInfo[k];
+                                        struct GP_LinkInfo *linkInfo = &ctx->linkInfo[k];
                                         if (linkInfo->shaderIndex == i) {
                                                 int programIndex = linkInfo->programIndex;
                                                 int attributeIndex = ctx->numProgramAttributes++;

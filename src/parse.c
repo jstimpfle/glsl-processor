@@ -8,15 +8,15 @@ static const struct {
         int character;
         int tokenKind;
 } tokInfo1[] = {
-        { '(', TOKEN_LEFTPAREN },
-        { ')', TOKEN_RIGHTPAREN },
-        { '{', TOKEN_LEFTBRACE },
-        { '}', TOKEN_RIGHTBRACE },
-        { '.', TOKEN_DOT },
-        { ',', TOKEN_COMMA },
-        { ';', TOKEN_SEMICOLON },
-        { '%', TOKEN_PERCENT },
-        { '!', TOKEN_NOT },
+        { '(', GP_TOKEN_LEFTPAREN },
+        { ')', GP_TOKEN_RIGHTPAREN },
+        { '{', GP_TOKEN_LEFTBRACE },
+        { '}', GP_TOKEN_RIGHTBRACE },
+        { '.', GP_TOKEN_DOT },
+        { ',', GP_TOKEN_COMMA },
+        { ';', GP_TOKEN_SEMICOLON },
+        { '%', GP_TOKEN_PERCENT },
+        { '!', GP_TOKEN_NOT },
 };
 
 static const struct {
@@ -25,15 +25,15 @@ static const struct {
         int tokenKind1;
         int tokenKind2;
 } tokInfo2[] = {
-        { '<', '=', TOKEN_LT, TOKEN_LE },
-        { '>', '=', TOKEN_GT, TOKEN_GE },
-        { '=', '=', TOKEN_EQUALS, TOKEN_DOUBLEEQUALS },
-        { '&', '&', TOKEN_AMPERSAND, TOKEN_DOUBLEAMPERSAND },
-        { '|', '|', TOKEN_PIPE, TOKEN_DOUBLEPIPE },
-        { '+', '=', TOKEN_PLUS, TOKEN_PLUSEQUALS },
-        { '-', '=', TOKEN_MINUS, TOKEN_MINUSEQUALS },
-        { '*', '=', TOKEN_STAR, TOKEN_STAREQUALS },
-        { '/', '=', TOKEN_SLASH, TOKEN_SLASHEQUALS },
+        { '<', '=', GP_TOKEN_LT, GP_TOKEN_LE },
+        { '>', '=', GP_TOKEN_GT, GP_TOKEN_GE },
+        { '=', '=', GP_TOKEN_EQUALS, GP_TOKEN_DOUBLEEQUALS },
+        { '&', '&', GP_TOKEN_AMPERSAND, GP_TOKEN_DOUBLEAMPERSAND },
+        { '|', '|', GP_TOKEN_PIPE, GP_TOKEN_DOUBLEPIPE },
+        { '+', '=', GP_TOKEN_PLUS, GP_TOKEN_PLUSEQUALS },
+        { '-', '=', GP_TOKEN_MINUS, GP_TOKEN_MINUSEQUALS },
+        { '*', '=', GP_TOKEN_STAR, GP_TOKEN_STAREQUALS },
+        { '/', '=', GP_TOKEN_SLASH, GP_TOKEN_SLASHEQUALS },
 };
 
 static void compute_line_and_column(struct GP_Ctx *ctx, int *outLine, int *outColumn)
@@ -132,7 +132,7 @@ skipwhitespace:
                 if (c > 32)
                         break;
                 if (c == -1) {
-                        ctx->tokenKind = TOKEN_EOF;
+                        ctx->tokenKind = GP_TOKEN_EOF;
                         return 0;
                 }
                 consume_character(ctx);
@@ -187,13 +187,13 @@ skipwhitespace:
                         }
                 }
                 else {
-                        ctx->tokenKind = TOKEN_SLASH;
+                        ctx->tokenKind = GP_TOKEN_SLASH;
                 }
         }
         else if (('a' <= c && c <= 'z')
             || ('A' <= c && c <= 'Z')
             || (c == '_')) {
-                ctx->tokenKind = TOKEN_NAME;
+                ctx->tokenKind = GP_TOKEN_NAME;
                 reset_tokenbuffer(ctx);
                 for (;;) {
                         append_to_tokenbuffer(ctx, c);
@@ -207,7 +207,7 @@ skipwhitespace:
                 }
         }
         else if ('0' <= c && c <= '9') {
-                ctx->tokenKind = TOKEN_LITERAL;
+                ctx->tokenKind = GP_TOKEN_LITERAL;
                 long long d = c - '0';
                 int haveDot = 0;
                 int nAfter = 0;
@@ -232,7 +232,7 @@ skipwhitespace:
                 //message_f("read floating value: %f", floatingValue);
         }
         else if (c == '"') {
-                ctx->tokenKind = TOKEN_STRING;
+                ctx->tokenKind = GP_TOKEN_STRING;
                 /* I believe there are no strings in GLSL, but we will
                  * have a use for them... */
                 consume_character(ctx);
@@ -293,7 +293,7 @@ static void consume_token(struct GP_Ctx *ctx)
 static int is_keyword(struct GP_Ctx *ctx, const char *keyword)
 {
         ENSURE(ctx->haveSavedToken);
-        if (ctx->tokenKind != TOKEN_NAME)
+        if (ctx->tokenKind != GP_TOKEN_NAME)
                 return 0;
         return !strcmp(ctx->tokenBuffer, keyword);
 }
@@ -339,12 +339,12 @@ static void parse_simple_token(struct GP_Ctx *ctx, int tokenKind)
 
 static void parse_semicolon(struct GP_Ctx *ctx)
 {
-        parse_simple_token(ctx, TOKEN_SEMICOLON);
+        parse_simple_token(ctx, GP_TOKEN_SEMICOLON);
 }
 
 static char *parse_name(struct GP_Ctx *ctx)
 {
-        expect_token_kind(ctx, TOKEN_NAME);
+        expect_token_kind(ctx, GP_TOKEN_NAME);
         //message_f("name is '%s'", ctx->tokenBuffer);
         char *name = alloc_string(ctx, ctx->tokenBuffer);
         consume_token(ctx);
@@ -352,29 +352,29 @@ static char *parse_name(struct GP_Ctx *ctx)
 }
 
 //XXX: if we detect that this is an interface block, we'll return NULL
-static struct TypeExpr *parse_typeexpr(struct GP_Ctx *ctx)
+static struct GP_TypeExpr *parse_typeexpr(struct GP_Ctx *ctx)
 {
-        expect_token_kind(ctx, TOKEN_NAME);
+        expect_token_kind(ctx, GP_TOKEN_NAME);
         while (is_keyword(ctx, "flat")) {
                 // XXX ignoring "flat" specifier for now. Not interesting to us.
                 consume_token(ctx);
-                expect_token_kind(ctx, TOKEN_NAME);
+                expect_token_kind(ctx, GP_TOKEN_NAME);
         }
         for (int i = 0; i < GP_NUM_PRIMTYPE_KINDS; i++) {
                 if (is_keyword(ctx, gp_primtypeString[i])) {
                         consume_token(ctx);
                         //message_f("parsed type %s", primtypeInfo[i].name);
-                        struct TypeExpr *typeExpr = create_typeexpr(ctx);
+                        struct GP_TypeExpr *typeExpr = create_typeexpr(ctx);
                         typeExpr->primtypeKind = i;
                         return typeExpr;
                 }
         }
         // maybe this is an interface block...
         consume_token(ctx);
-        if (look_token_kind(ctx, TOKEN_LEFTBRACE)) {
+        if (look_token_kind(ctx, GP_TOKEN_LEFTBRACE)) {
                 // this is an interface block. Parse it and ignore the contents (for now)
                 consume_token(ctx);
-                while (!look_token_kind(ctx, TOKEN_RIGHTBRACE)) {
+                while (!look_token_kind(ctx, GP_TOKEN_RIGHTBRACE)) {
                         //XXX ignoreing stuff for now
                         parse_typeexpr(ctx);
                         parse_name(ctx);
@@ -386,19 +386,19 @@ static struct TypeExpr *parse_typeexpr(struct GP_Ctx *ctx)
         fatal_parse_error_f(ctx, "type expected or interface block was expected, got: %s", ctx->tokenBuffer);
 }
 
-static struct TypeExpr *parse_type_or_void(struct GP_Ctx *ctx)
+static struct GP_TypeExpr *parse_type_or_void(struct GP_Ctx *ctx)
 {
-        expect_token_kind(ctx, TOKEN_NAME);
+        expect_token_kind(ctx, GP_TOKEN_NAME);
         if (is_keyword(ctx, "void")) {
                 consume_token(ctx);
-                struct TypeExpr *typeExpr = create_typeexpr(ctx);
+                struct GP_TypeExpr *typeExpr = create_typeexpr(ctx);
                 typeExpr->primtypeKind = -1;
                 return typeExpr;
         }
         return parse_typeexpr(ctx);
 }
 
-static struct VariableDecl *parse_variable(struct GP_Ctx *ctx)
+static struct GP_VariableDecl *parse_variable(struct GP_Ctx *ctx)
 {
         int inOrOut;
         if (is_keyword(ctx, "flat")) {
@@ -417,27 +417,27 @@ static struct VariableDecl *parse_variable(struct GP_Ctx *ctx)
                         ctx->tokenBuffer);
         }
         consume_token(ctx); // "in" or "out"
-        struct TypeExpr *typeExpr = parse_typeexpr(ctx);
+        struct GP_TypeExpr *typeExpr = parse_typeexpr(ctx);
         // XXX WARNING currently parse_typeexpr() may return NULL, which means that this was an interface block. Is it safe to proceed?
         char *name = parse_name(ctx);
         parse_semicolon(ctx);
-        struct VariableDecl *variableDecl = create_variabledecl(ctx);
+        struct GP_VariableDecl *variableDecl = create_variabledecl(ctx);
         variableDecl->inOrOut = inOrOut;
         variableDecl->name = name;
         variableDecl->typeExpr = typeExpr;
         return variableDecl;
 }
 
-static struct UniformDecl *parse_uniform(struct GP_Ctx *ctx)
+static struct GP_UniformDecl *parse_uniform(struct GP_Ctx *ctx)
 {
         consume_token(ctx); // "uniform"
-        struct TypeExpr *typeExpr = parse_typeexpr(ctx);
+        struct GP_TypeExpr *typeExpr = parse_typeexpr(ctx);
         // currently parse_typeexpr may return NULL, but this is not valid for uniforms.
         if (typeExpr == NULL)
                 fatal_parse_error_f(ctx, "Can't use an interface block as a type for a uniform.");
         char *name = parse_name(ctx);
         parse_semicolon(ctx);
-        struct UniformDecl *uniformDecl = create_uniformdecl(ctx);
+        struct GP_UniformDecl *uniformDecl = create_uniformdecl(ctx);
         uniformDecl->uniDeclName = name;
         uniformDecl->uniDeclTypeExpr = typeExpr;
         //printf("parse uniform (%s) %s %s\n", ctx->filepath, name, primtypeKindString[typeExpr->primtypeKind]);
@@ -448,16 +448,16 @@ static void parse_expression(struct GP_Ctx *ctx)
 {
         if (!look_token(ctx))
                 fatal_parse_error_f(ctx, "Expected expression");
-        if (ctx->tokenKind == TOKEN_NAME) {
+        if (ctx->tokenKind == GP_TOKEN_NAME) {
                 consume_token(ctx);
         }
-        else if (ctx->tokenKind == TOKEN_LITERAL) {
+        else if (ctx->tokenKind == GP_TOKEN_LITERAL) {
                 consume_token(ctx);
         }
-        else if (ctx->tokenKind == TOKEN_LEFTPAREN) {
+        else if (ctx->tokenKind == GP_TOKEN_LEFTPAREN) {
                 consume_token(ctx);
                 parse_expression(ctx);
-                parse_simple_token(ctx, TOKEN_RIGHTPAREN);
+                parse_simple_token(ctx, GP_TOKEN_RIGHTPAREN);
         }
         else {
                 /* unary operator? */
@@ -474,20 +474,20 @@ ok:
         }
         for (;;) {
                 // function call?
-                if (look_token_kind(ctx, TOKEN_LEFTPAREN)) {
+                if (look_token_kind(ctx, GP_TOKEN_LEFTPAREN)) {
                         consume_token(ctx);
-                        if (!look_token_kind(ctx, TOKEN_RIGHTPAREN)) {
+                        if (!look_token_kind(ctx, GP_TOKEN_RIGHTPAREN)) {
                                 for (;;) {
                                         parse_expression(ctx);
-                                        if (!look_token_kind(ctx, TOKEN_COMMA))
+                                        if (!look_token_kind(ctx, GP_TOKEN_COMMA))
                                                 break;
                                         consume_token(ctx);
                                 }
                         }
-                        parse_simple_token(ctx, TOKEN_RIGHTPAREN);
+                        parse_simple_token(ctx, GP_TOKEN_RIGHTPAREN);
                 }
                 // member descend?
-                else if (look_token_kind(ctx, TOKEN_DOT)) {
+                else if (look_token_kind(ctx, GP_TOKEN_DOT)) {
                         consume_token(ctx);
                         parse_name(ctx);
                 }
@@ -508,17 +508,17 @@ static void parse_stmt(struct GP_Ctx *ctx); // forward declare: recursion
 
 static void parse_compound_stmt(struct GP_Ctx *ctx)
 {
-        parse_simple_token(ctx, TOKEN_LEFTBRACE);
-        while (!look_token_kind(ctx, TOKEN_RIGHTBRACE))
+        parse_simple_token(ctx, GP_TOKEN_LEFTBRACE);
+        while (!look_token_kind(ctx, GP_TOKEN_RIGHTBRACE))
                 parse_stmt(ctx);
-        parse_simple_token(ctx, TOKEN_RIGHTBRACE);
+        parse_simple_token(ctx, GP_TOKEN_RIGHTBRACE);
 }
 
 static void parse_variable_declaration_stmt(struct GP_Ctx *ctx)
 {
         parse_typeexpr(ctx);
         parse_name(ctx);
-        if (look_token_kind(ctx, TOKEN_EQUALS)) {
+        if (look_token_kind(ctx, GP_TOKEN_EQUALS)) {
                 consume_token(ctx);
                 parse_expression(ctx);
                 parse_semicolon(ctx);
@@ -528,11 +528,11 @@ static void parse_variable_declaration_stmt(struct GP_Ctx *ctx)
 static void parse_if_stmt(struct GP_Ctx *ctx)
 {
         consume_token(ctx); // "if"
-        parse_simple_token(ctx, TOKEN_LEFTPAREN);
+        parse_simple_token(ctx, GP_TOKEN_LEFTPAREN);
         parse_expression(ctx);
-        parse_simple_token(ctx, TOKEN_RIGHTPAREN);
+        parse_simple_token(ctx, GP_TOKEN_RIGHTPAREN);
         parse_stmt(ctx);
-        if (look_token_kind(ctx, TOKEN_NAME) && is_keyword(ctx, "else")) {
+        if (look_token_kind(ctx, GP_TOKEN_NAME) && is_keyword(ctx, "else")) {
                 consume_token(ctx); // "if"
                 parse_stmt(ctx);
         }
@@ -561,7 +561,7 @@ static void parse_stmt(struct GP_Ctx *ctx)
 {
         if (!look_token(ctx))
                 fatal_parse_error_f(ctx, "Expected statement");
-        if (ctx->tokenKind == TOKEN_LEFTBRACE)
+        if (ctx->tokenKind == GP_TOKEN_LEFTBRACE)
                 parse_compound_stmt(ctx);
         else if (is_known_type_name(ctx))
                 parse_variable_declaration_stmt(ctx);
@@ -578,51 +578,51 @@ static void parse_stmt(struct GP_Ctx *ctx)
 static void parse_FuncDefn_or_FuncDecl(struct GP_Ctx *ctx)
 {
         //message_f("Function!", ctx->tokenBufferLength);
-        struct TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
+        struct GP_TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
         char *name = parse_name(ctx);
-        parse_simple_token(ctx, TOKEN_LEFTPAREN);
+        parse_simple_token(ctx, GP_TOKEN_LEFTPAREN);
         int numArgs = 0;
         char **argNames = NULL;
-        struct TypeExpr **argTypeExprs = NULL;
-        if (!look_token_kind(ctx, TOKEN_RIGHTPAREN)) {
+        struct GP_TypeExpr **argTypeExprs = NULL;
+        if (!look_token_kind(ctx, GP_TOKEN_RIGHTPAREN)) {
                 for (;;) {
                         numArgs++;
                         REALLOC_MEMORY(&argTypeExprs, numArgs);
                         REALLOC_MEMORY(&argNames, numArgs);
                         argTypeExprs[numArgs - 1] = parse_typeexpr(ctx);
                         argNames[numArgs - 1] = parse_name(ctx);
-                        if (!look_token_kind(ctx, TOKEN_COMMA))
+                        if (!look_token_kind(ctx, GP_TOKEN_COMMA))
                                 break;
                         consume_token(ctx);
                 }
         }
-        parse_simple_token(ctx, TOKEN_RIGHTPAREN);
-        if (look_token_kind(ctx, TOKEN_SEMICOLON)) {
+        parse_simple_token(ctx, GP_TOKEN_RIGHTPAREN);
+        if (look_token_kind(ctx, GP_TOKEN_SEMICOLON)) {
                 // it's only a decl
                 consume_token(ctx);
-                struct FuncDecl *funcDecl = create_funcdecl(ctx);
+                struct GP_FuncDecl *funcDecl = create_funcdecl(ctx);
                 funcDecl->name = name;
                 funcDecl->returnTypeExpr = returnTypeExpr;
                 funcDecl->argTypeExprs = argTypeExprs;
                 funcDecl->argNames = argNames;
                 funcDecl->numArgs = numArgs;
-                struct ToplevelNode *node = add_new_toplevel_node(ctx);
-                node->directiveKind = DIRECTIVE_FUNCDECL;
+                struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                node->directiveKind = GP_DIRECTIVE_FUNCDECL;
                 node->data.tFuncdecl = funcDecl;
         }
         else {
-                parse_simple_token(ctx, TOKEN_LEFTBRACE);
-                while (!look_token_kind(ctx, TOKEN_RIGHTBRACE))
+                parse_simple_token(ctx, GP_TOKEN_LEFTBRACE);
+                while (!look_token_kind(ctx, GP_TOKEN_RIGHTBRACE))
                         parse_stmt(ctx);
-                parse_simple_token(ctx, TOKEN_RIGHTBRACE);
-                struct FuncDefn *funcDefn = create_funcdefn(ctx);
+                parse_simple_token(ctx, GP_TOKEN_RIGHTBRACE);
+                struct GP_FuncDefn *funcDefn = create_funcdefn(ctx);
                 funcDefn->name = name;
                 funcDefn->returnTypeExpr = returnTypeExpr;
                 funcDefn->argTypeExprs = argTypeExprs;
                 funcDefn->argNames = argNames;
                 funcDefn->numArgs = numArgs;
-                struct ToplevelNode *node = add_new_toplevel_node(ctx);
-                node->directiveKind = DIRECTIVE_FUNCDEFN;
+                struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                node->directiveKind = GP_DIRECTIVE_FUNCDEFN;
                 node->data.tFuncdefn = funcDefn;
         }
 }
@@ -650,13 +650,13 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
         ctx->haveSavedCharacter = 0;
 
         ctx->haveSavedToken = 0;
-        ctx->tokenKind = TOKEN_EOF;  // this is always valid. That's nice for error printing
+        ctx->tokenKind = GP_TOKEN_EOF;  // this is always valid. That's nice for error printing
         ctx->tokenBuffer = NULL;
         ctx->tokenBufferLength = 0;
         ctx->tokenBufferCapacity = 0;
 
         {
-        struct ShaderfileAst *fa = &ctx->shaderfileAsts[shaderIndex];
+        struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[shaderIndex];
         memset(fa, 0, sizeof *fa);
         int filepathLength = (int) strlen(fileID);
         ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
@@ -667,18 +667,18 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
 
         while (look_token(ctx)) {
                 if (is_keyword(ctx, "uniform")) {
-                        struct ToplevelNode *node = add_new_toplevel_node(ctx);
-                        node->directiveKind = DIRECTIVE_UNIFORM;
+                        struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                        node->directiveKind = GP_DIRECTIVE_UNIFORM;
                         node->data.tUniform = parse_uniform(ctx);
                 }
                 else if (is_keyword(ctx, "in")
                          || is_keyword(ctx, "out")
                          || is_keyword(ctx, "flat")) {
-                        struct ToplevelNode *node = add_new_toplevel_node(ctx);
-                        node->directiveKind = DIRECTIVE_VARIABLE;
+                        struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                        node->directiveKind = GP_DIRECTIVE_VARIABLE;
                         node->data.tVariable = parse_variable(ctx);
                 }
-                else if (ctx->tokenKind == TOKEN_NAME) {
+                else if (ctx->tokenKind == GP_TOKEN_NAME) {
                         parse_FuncDefn_or_FuncDecl(ctx);
                 }
                 else
