@@ -9,7 +9,6 @@ CFLAGS += -DDATA=extern
 CFILES =
 CFILES += src/api.c
 CFILES += src/ast.c
-CFILES += src/backtrace_linux.c
 CFILES += src/data.c
 CFILES += src/parse.c
 CFILES += src/process.c
@@ -17,8 +16,6 @@ CFILES += src/write_c_interface.c
 CFILES += src/logging.c
 CFILES += src/main.c
 CFILES += src/memoryalloc.c
-
-LDFLAGS += -rdynamic # needed so that backtrace() can print function names
 
 OBJECTS = $(CFILES:%.c=BUILD/%.o)
 

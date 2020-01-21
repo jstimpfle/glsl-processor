@@ -1,4 +1,3 @@
-#include <glsl-processor/backtrace.h>
 #include <glsl-processor/logging.h>
 
 void _gp_message_begin(struct GP_LogCtx logCtx)
@@ -86,48 +85,5 @@ void NORETURN _gp_fatal_f(struct GP_LogCtx logCtx, const char *fmt, ...)
         va_list ap;
         va_start(ap, fmt);
         _gp_fatal_fv(logCtx, fmt, ap);
-        va_end(ap);
-};
-
-
-
-void _gp_internalerror_begin(struct GP_LogCtx logCtx)
-{
-        _gp_message_begin(logCtx);
-        gp_message_write_f("INTERNAL ERROR: ");
-}
-
-void gp_internalerror_write_fv(const char *fmt, va_list ap)
-{
-        gp_message_write_fv(fmt, ap);
-}
-
-void gp_internalerror_write_f(const char *fmt, ...)
-{
-        va_list ap;
-        va_start(ap, fmt);
-        gp_internalerror_write_fv(fmt, ap);
-        va_end(ap);
-}
-
-void NORETURN gp_internalerror_end(void)
-{
-        gp_message_end();
-        print_backtrace();
-        abort();
-}
-
-void NORETURN _gp_internalerror_fv(struct GP_LogCtx logCtx, const char *fmt, va_list ap)
-{
-        _gp_internalerror_begin(logCtx);
-        gp_internalerror_write_fv(fmt, ap);
-        gp_internalerror_end();
-}
-
-void NORETURN _gp_internalerror_f(struct GP_LogCtx logCtx, const char *fmt, ...)
-{
-        va_list ap;
-        va_start(ap, fmt);
-        _gp_internalerror_fv(logCtx, fmt, ap);
         va_end(ap);
 };

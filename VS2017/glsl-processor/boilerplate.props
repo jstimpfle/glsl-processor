@@ -43,9 +43,14 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
 
+  <PropertyGroup Label="UserMacros">
+     <IntDirWithOutProject>IntDir/$(Configuration)-$(Platform)</IntDirWithOutProject>
+     <OutDirWithOutProject>OutDir/$(Configuration)-$(Platform)</OutDirWithOutProject>
+  </PropertyGroup>
+
   <PropertyGroup>
-    <IntDir>IntDir/$(Configuration)-$(Platform)</IntDir>
-    <OutDir>OutDir/$(Configuration)-$(Platform)</OutDir>
+    <IntDir>$(IntDirWithOutProject)/$(ProjectName)/</IntDir>
+    <OutDir>$(OutDirWithOutProject)/$(ProjectName)/</OutDir>
   </PropertyGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define GP_ENSURE(x) do { if (!(x)) gp_internalerror_f("Assertion failed: %s", #x); } while (0)
+#define GP_ENSURE(x) do { if (!(x)) gp_fatal_f("Assertion failed: %s", #x); } while (0)
 
 struct GP_LogCtx {
         const char *filename;
@@ -32,13 +32,6 @@ void NORETURN gp_fatal_end(void);
 void NORETURN _gp_fatal_fv(struct GP_LogCtx logCtx, const char *fmt, va_list ap);
 void NORETURN _gp_fatal_f(struct GP_LogCtx logCtx, const char *fmt, ...);
 
-void _gp_internalerror_begin(struct GP_LogCtx logCtx);
-void gp_internalerror_write_fv(const char *fmt, va_list ap);
-void gp_internalerror_write_f(const char *fmt, ...);
-void NORETURN gp_internalerror_end(void);
-void NORETURN _gp_internalerror_fv(struct GP_LogCtx logCtx, const char *fmt, va_list ap);
-void NORETURN _gp_internalerror_f(struct GP_LogCtx logCtx, const char *fmt, ...);
-
 #define GP_MAKE_LOGCTX() ((struct GP_LogCtx) { __FILE__, __LINE__ })
 #define gp_message_begin() _gp_message_begin(GP_MAKE_LOGCTX())
 #define gp_message_fv(fmt, ap) _gp_message_fv(GP_MAKE_LOGCTX(), (fmt), (ap))
@@ -47,7 +40,5 @@ void NORETURN _gp_internalerror_f(struct GP_LogCtx logCtx, const char *fmt, ...)
 #define gp_fatal_begin() _gp_fatal_begin(GP_MAKE_LOGCTX())
 #define gp_fatal_fv(fmt, ap) _gp_fatal_fv(GP_MAKE_LOGCTX(), (fmt), (ap))
 #define gp_fatal_f(fmt, ...) _gp_fatal_f(GP_MAKE_LOGCTX(), (fmt), ##__VA_ARGS__)
-#define gp_internalerror_fv(fmt, ap) _gp_internalerror_fv(GP_MAKE_LOGCTX(), (fmt), (ap))
-#define gp_internalerror_f(fmt, ...) _gp_internalerror_f(GP_MAKE_LOGCTX(), (fmt), ##__VA_ARGS__)
 
 #endif

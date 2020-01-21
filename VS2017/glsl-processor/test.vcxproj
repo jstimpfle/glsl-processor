@@ -24,7 +24,7 @@
       <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies);$(Configuration)/glsl-processor.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);$(OutDirWithoutProject)/glsl-processor/glsl-processor.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Label="Globals">

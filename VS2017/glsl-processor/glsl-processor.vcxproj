@@ -7,7 +7,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\glsl-processor\builder.h" />
     <ClInclude Include="..\..\include\glsl-processor\ast.h" />
-    <ClInclude Include="..\..\include\glsl-processor\backtrace.h" />
     <ClInclude Include="..\..\include\glsl-processor\defs.h" />
     <ClInclude Include="..\..\include\glsl-processor\logging.h" />
     <ClInclude Include="..\..\include\glsl-processor\memoryalloc.h" />
@@ -18,7 +17,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\builder.c" />
     <ClCompile Include="..\..\src\ast.c" />
-    <ClCompile Include="..\..\src\backtrace_win32.c" />
     <ClCompile Include="..\..\src\data.c" />
     <ClCompile Include="..\..\src\logging.c" />
     <ClCompile Include="..\..\src\main.c" />
