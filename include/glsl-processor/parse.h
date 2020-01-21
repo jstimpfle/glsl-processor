@@ -1,6 +1,37 @@
 #ifndef GP_PARSE_H_INCLUDED
 #define GP_PARSE_H_INCLUDED
 
+struct GP_FileInfo {
+        char *fileID;
+        char *contents;
+        int size;
+};
+
+struct GP_ProgramInfo {
+        char *programName;
+};
+
+struct GP_ShaderInfo {
+        char *shaderName;
+        int shaderType;
+};
+
+struct GP_LinkInfo {
+        int programIndex;
+        int shaderIndex;
+};
+
+struct GP_ProgramUniform {
+        int programIndex;
+        int typeKind;
+        char *uniformName;
+};
+
+struct GP_ProgramAttribute {
+        int programIndex;
+        int typeKind;
+        char *attributeName;
+};
 
 struct GP_Ctx {
         struct GP_FileInfo *fileInfo;

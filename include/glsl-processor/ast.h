@@ -92,6 +92,23 @@ enum {
         GP_NUM_PRIMTYPE_KINDS
 };
 
+struct GP_UnopInfo {
+        char *text;
+};
+
+struct GP_BinopInfo {
+        char *text;
+};
+
+struct GP_UnopTokenInfo {
+        int tokenKind;
+        int unopKind;
+};
+
+struct GP_BinopTokenInfo {
+        int tokenKind;
+        int binopKind;
+};
 
 typedef int GP_Expr;
 typedef int GP_Stmt;
@@ -178,7 +195,6 @@ struct GP_FuncDefn {
         GP_Stmt bodyStmt;
 };
 
-
 enum {
         GP_DIRECTIVE_UNIFORM,
         GP_DIRECTIVE_VARIABLE,  // "in" or "out"
@@ -196,62 +212,12 @@ struct GP_ToplevelNode {
         } data;
 };
 
-struct GP_UnopInfo {
-        char *text;
-};
-
-struct GP_BinopInfo {
-        char *text;
-};
-
-struct GP_UnopTokenInfo {
-        int tokenKind;
-        int unopKind;
-};
-
-struct GP_BinopTokenInfo {
-        int tokenKind;
-        int binopKind;
-};
-
 struct GP_ShaderfileAst {
         char *filepath;
 
         // For now, for simplicity and pointer stability, an array of pointers...
         struct GP_ToplevelNode **toplevelNodes;
         int numToplevelNodes;
-};
-
-struct GP_FileInfo {
-        char *fileID;
-        char *contents;
-        int size;
-};
-
-struct GP_ProgramInfo {
-        char *programName;
-};
-
-struct GP_ShaderInfo {
-        char *shaderName;
-        int shaderType;
-};
-
-struct GP_LinkInfo {
-        int programIndex;
-        int shaderIndex;
-};
-
-struct GP_ProgramUniform {
-        int programIndex;
-        int typeKind;
-        char *uniformName;
-};
-
-struct GP_ProgramAttribute {
-        int programIndex;
-        int typeKind;
-        char *attributeName;
 };
 
 extern const char *const gp_tokenKindString[GP_NUM_TOKEN_KINDS];
