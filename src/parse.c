@@ -631,8 +631,7 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
 {
         int fileIndex = -1;
         for (int i = 0; i < ctx->numFiles; i++)
-                if (!strcmp(ctx->shaderInfo[shaderIndex].shaderName,
-                            ctx->fileInfo[i].fileID))
+                if (!strcmp(ctx->shaderInfo[shaderIndex].fileID, ctx->fileInfo[i].fileID))
                         fileIndex = i;
         if (fileIndex == -1)
                 gp_fatal_f("No source file for shader '%s'",

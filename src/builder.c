@@ -16,6 +16,7 @@ struct GP_Builder_Program {
 
 struct GP_Builder_Shader {
         char *shaderID;
+        char *fileID;
         int shadertypeKind;
 };
 
@@ -109,11 +110,12 @@ void gp_builder_create_program(struct GP_Builder *builder, const char *programID
         builder->programs[idx].programID = gp_builder_create_string(programID);
 }
 
-void gp_builder_create_shader(struct GP_Builder *builder, const char *shaderID, int shadertypeKind)
+void gp_builder_create_shader(struct GP_Builder *builder, const char *shaderID, const char *fileID, int shadertypeKind)
 {
         int idx = builder->numShaders++;
         REALLOC_MEMORY(&builder->shaders, builder->numShaders);
         builder->shaders[idx].shaderID = gp_builder_create_string(shaderID);
+        builder->shaders[idx].fileID = gp_builder_create_string(fileID);
         builder->shaders[idx].shadertypeKind = shadertypeKind;
 }
 
@@ -149,6 +151,7 @@ void gp_builder_destroy_shader(struct GP_Builder *builder, const char *shaderID)
         int idx = gp_builder_find_shader(builder, shaderID);
         if (idx != -1) {
                 gp_builder_destroy_string(builder->shaders[idx].shaderID);
+                gp_builder_destroy_string(builder->shaders[idx].fileID);
                 GP_DELETE_FROM_ARRAY(&builder->shaders, &builder->numShaders, idx);
         }
 }
@@ -211,6 +214,11 @@ void gp_builder_process(struct GP_Builder *builder)
                     && !strcmp(builder->links[i].shaderID, builder->links[i-1].shaderID))
                         gp_fatal_f("Multiple links '%s -> %s' given",
                                 builder->links[i].programID, builder->links[i].shaderID);
+        for (int i = 1; i < builder->numShaders; i++)
+                if (gp_builder_find_file(builder, builder->shaders[i].fileID) == -1)
+                        gp_fatal_f("Shader '%s' needs file '%s' but it doesn't exist",
+                                   builder->shaders[i].shaderID,
+                                   builder->shaders[i].fileID);
         for (int i = 0; i < builder->numLinks; i++) {
                 if (gp_builder_find_program(builder, builder->links[i].programID) == -1)
                         gp_fatal_f("In Link '%s -> %s': No such program '%s'",
@@ -246,6 +254,7 @@ void gp_builder_to_ctx(struct GP_Builder *sp, struct GP_Ctx *ctx)
                 ctx->programInfo[i].programName = sp->programs[i].programID;
         for (int i = 0; i < sp->numShaders; i++) {
                 ctx->shaderInfo[i].shaderName = sp->shaders[i].shaderID;
+                ctx->shaderInfo[i].fileID = sp->shaders[i].fileID;
                 ctx->shaderInfo[i].shaderType = sp->shaders[i].shadertypeKind;
         }
         for (int i = 0; i < sp->numLinks; i++) {

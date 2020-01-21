@@ -7,20 +7,20 @@
 #include <glsl-processor/write_c_interface.h>
 
 static const struct {
-        const char *extension;
+        const char *shaderID;
+        const char *fileID;
         int shadertypeKind;
-} shadertypeMap[] = {
-        { "vert", GP_SHADERTYPE_VERTEX },
-        { "frag", GP_SHADERTYPE_FRAGMENT },
-};
-
-static const char *const shaders[] = {
-        "line.vert",
-        "line.frag",
-        "circle.vert",
-        "circle.frag",
-        "arc.vert",
-        "arc.frag",
+} shaders[] = {
+#define VERT(x) { x "_vert", "example-shaders/" x ".vert", GP_SHADERTYPE_VERTEX }
+#define FRAG(x) { x "_frag", "example-shaders/" x ".frag", GP_SHADERTYPE_FRAGMENT }
+        VERT("line"),
+        FRAG("line"),
+        VERT("circle"),
+        FRAG("circle"),
+        VERT("arc"),
+        FRAG("arc"),
+#undef VERT
+#undef FRAG
 };
 
 static const char *const programs[] = {
@@ -33,21 +33,19 @@ static const struct {
         const char *program;
         const char *shader;
 } links[] = {
-        { "line", "line.vert" },
-        { "line", "line.frag" },
-        { "circle", "circle.vert" },
-        { "circle", "circle.frag" },
-        { "arc", "arc.vert" },
-        { "arc", "arc.frag" },
+        { "line", "line_vert" },
+        { "line", "line_frag" },
+        { "circle", "circle_vert" },
+        { "circle", "circle_frag" },
+        { "arc", "arc_vert" },
+        { "arc", "arc_frag" },
 };
 
 int main(void)
 {
         struct GP_Builder sp = {0};
         for (int i = 0; i < LENGTH(shaders); i++) {
-                char filepath[256] = "example-shaders/";
-                GP_ENSURE(strlen(filepath) + strlen(shaders[i]) + 1 <= LENGTH(filepath));
-                memcpy(filepath + strlen(filepath), shaders[i], strlen(shaders[i]) + 1);
+                const char *filepath = shaders[i].fileID;
                 FILE *f = fopen(filepath, "rb");
                 if (f == NULL)
                         gp_fatal_f("Failed to open shader file '%s'", filepath);
@@ -63,22 +61,10 @@ int main(void)
                 if (ferror(f))
                         gp_fatal_f("I/O error while reading from '%s'", filepath);
                 fclose(f);
-                gp_builder_create_file(&sp, shaders[i], data, size);
+                gp_builder_create_file(&sp, shaders[i].fileID, data, size);
         }
-        for (int i = 0; i < LENGTH(shaders); i++) {
-                int shadertypeKind = -1;
-                int shadernameLength = strlen(shaders[i]);
-                for (int j = 0; j < LENGTH(shadertypeMap); j++) {
-                        int extensionLength = strlen(shadertypeMap[j].extension);
-                        if (shadernameLength >= extensionLength + 1
-                            && shaders[i][shadernameLength - extensionLength - 1] == '.'
-                            && !strcmp(shaders[i] + shadernameLength - extensionLength, shadertypeMap[j].extension))
-                                shadertypeKind = shadertypeMap[j].shadertypeKind;
-                }
-                if (shadertypeKind == -1)
-                        gp_fatal_f("Invalid shader extension: '%s'", shaders[i]);
-                gp_builder_create_shader(&sp, shaders[i], shadertypeKind);
-        }
+        for (int i = 0; i < LENGTH(shaders); i++)
+                gp_builder_create_shader(&sp, shaders[i].shaderID, shaders[i].fileID, shaders[i].shadertypeKind);
         for (int i = 0; i < LENGTH(programs); i++)
                 gp_builder_create_program(&sp, programs[i]);
         for (int i = 0; i < LENGTH(links); i++)

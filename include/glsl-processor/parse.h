@@ -13,6 +13,7 @@ struct GP_ProgramInfo {
 
 struct GP_ShaderInfo {
         char *shaderName;
+        char *fileID;
         int shaderType;
 };
 

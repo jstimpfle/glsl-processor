@@ -24,7 +24,7 @@ void gp_builder_process(struct GP_Builder *ctx);
 void gp_builder_to_ctx(struct GP_Builder *sp, struct GP_Ctx *ctx);
 
 void gp_builder_create_file(struct GP_Builder *ctx, const char *fileID, const char *data, int size);
-void gp_builder_create_shader(struct GP_Builder *ctx, const char *shaderID, int shadertypeKind);
+void gp_builder_create_shader(struct GP_Builder *ctx, const char *shaderID, const char *fileID, int shadertypeKind);
 void gp_builder_create_program(struct GP_Builder *ctx, const char *programID);
 void gp_builder_create_link(struct GP_Builder *ctx, const char *programID, const char *shaderID);
 
