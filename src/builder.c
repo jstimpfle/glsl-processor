@@ -1,6 +1,6 @@
-#include <glsl-processor/memoryalloc.h>
-#include <glsl-processor/ast.h>
+#include <glsl-processor/memory.h>
 #include <glsl-processor/builder.h>
+#include <glsl-processor/parse.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -235,35 +235,36 @@ void gp_builder_process(struct GP_Builder *builder)
 
 void gp_builder_to_ctx(struct GP_Builder *sp, struct GP_Ctx *ctx)
 {
-        memset(ctx, 0, sizeof *ctx);
-        ctx->numFiles = sp->numFiles;
-        ctx->numPrograms = sp->numPrograms;
-        ctx->numShaders = sp->numShaders;
-        ctx->numLinks = sp->numLinks;
-        REALLOC_MEMORY(&ctx->fileInfo, ctx->numFiles);
-        REALLOC_MEMORY(&ctx->programInfo, ctx->numPrograms);
-        REALLOC_MEMORY(&ctx->shaderInfo, ctx->numShaders);
-        REALLOC_MEMORY(&ctx->shaderfileAsts, ctx->numShaders); //!!!
-        REALLOC_MEMORY(&ctx->linkInfo, ctx->numLinks);
+        struct GP_Desc *desc = &ctx->desc;
+        memset(desc, 0, sizeof *desc);
+        desc->numFiles = sp->numFiles;
+        desc->numPrograms = sp->numPrograms;
+        desc->numShaders = sp->numShaders;
+        desc->numLinks = sp->numLinks;
+        REALLOC_MEMORY(&desc->fileInfo, desc->numFiles);
+        REALLOC_MEMORY(&desc->programInfo, desc->numPrograms);
+        REALLOC_MEMORY(&desc->shaderInfo, desc->numShaders);
+        REALLOC_MEMORY(&desc->linkInfo, desc->numLinks);
+        REALLOC_MEMORY(&ctx->shaderfileAsts, desc->numShaders); //!!!
         for (int i = 0; i < sp->numFiles; i++) {
-                ctx->fileInfo[i].fileID = sp->files[i].fileID;
-                ctx->fileInfo[i].contents = sp->files[i].contents;
-                ctx->fileInfo[i].size = sp->files[i].size;
+                desc->fileInfo[i].fileID = sp->files[i].fileID;
+                desc->fileInfo[i].contents = sp->files[i].contents;
+                desc->fileInfo[i].size = sp->files[i].size;
         }
         for (int i = 0; i < sp->numPrograms; i++)
-                ctx->programInfo[i].programName = sp->programs[i].programID;
+                desc->programInfo[i].programName = sp->programs[i].programID;
         for (int i = 0; i < sp->numShaders; i++) {
-                ctx->shaderInfo[i].shaderName = sp->shaders[i].shaderID;
-                ctx->shaderInfo[i].fileID = sp->shaders[i].fileID;
-                ctx->shaderInfo[i].shaderType = sp->shaders[i].shadertypeKind;
+                desc->shaderInfo[i].shaderName = sp->shaders[i].shaderID;
+                desc->shaderInfo[i].fileID = sp->shaders[i].fileID;
+                desc->shaderInfo[i].shaderType = sp->shaders[i].shadertypeKind;
         }
         for (int i = 0; i < sp->numLinks; i++) {
                 int programIndex = gp_builder_find_program(sp, sp->links[i].programID);
                 int shaderIndex = gp_builder_find_shader(sp, sp->links[i].shaderID);
                 GP_ENSURE(programIndex != -1);  //should have been caught earlier
                 GP_ENSURE(shaderIndex != -1);  //should have been caught earlier
-                ctx->linkInfo[i].programIndex = programIndex;
-                ctx->linkInfo[i].shaderIndex = shaderIndex;
+                desc->linkInfo[i].programIndex = programIndex;
+                desc->linkInfo[i].shaderIndex = shaderIndex;
         }
 }
 

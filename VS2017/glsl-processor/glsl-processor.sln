@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28307.705
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glsl-processor", "glsl-processor.vcxproj", "{AD1488EA-1C3C-4248-9F6B-9ECA1F90D0E0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcxproj", "{0000000F-0000-0000-0000-000000000000}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "example.vcxproj", "{0000000F-0000-0000-0000-000000000000}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AD1488EA-1C3C-4248-9F6B-9ECA1F90D0E0} = {AD1488EA-1C3C-4248-9F6B-9ECA1F90D0E0}
 	EndProjectSection

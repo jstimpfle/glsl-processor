@@ -1,7 +1,7 @@
 #include <glsl-processor/defs.h>
 #include <glsl-processor/ast.h>
 #include <glsl-processor/parse.h>
-#include <glsl-processor/memoryalloc.h>
+#include <glsl-processor/memory.h>
 #include <glsl-processor/logging.h>
 
 static const struct {
@@ -331,6 +331,15 @@ static void expect_token_kind(struct GP_Ctx *ctx, int tokenKind)
                                     gp_tokenKindString[ctx->tokenKind]);
 }
 
+static char *alloc_string(struct GP_Ctx *ctx, const char *data)
+{
+        int length = (int) strlen(data);
+        char *string;
+        ALLOC_MEMORY(&string, length + 1);
+        memcpy(string, data, length + 1);
+        return string;
+}
+
 static void parse_simple_token(struct GP_Ctx *ctx, int tokenKind)
 {
         expect_token_kind(ctx, tokenKind);
@@ -349,6 +358,29 @@ static char *parse_name(struct GP_Ctx *ctx)
         char *name = alloc_string(ctx, ctx->tokenBuffer);
         consume_token(ctx);
         return name;
+}
+
+// TODO: attach to context
+#define DEFINE_ALLOCATOR_FUNCTION(type, name) type *name(struct GP_Ctx *ctx) \
+{ \
+        type *x; \
+        ALLOC_MEMORY(&x, sizeof *x); \
+        return x; \
+}
+
+DEFINE_ALLOCATOR_FUNCTION(struct GP_TypeExpr, create_typeexpr)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_UniformDecl, create_uniformdecl)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_VariableDecl, create_variabledecl)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_FuncDecl, create_funcdecl)
+DEFINE_ALLOCATOR_FUNCTION(struct GP_FuncDefn, create_funcdefn)
+
+struct GP_ToplevelNode *gp_add_new_toplevel_node(struct GP_Ctx *ctx)
+{
+        struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[ctx->currentShaderIndex];
+        int idx = fa->numToplevelNodes ++;
+        REALLOC_MEMORY(&fa->toplevelNodes, fa->numToplevelNodes);
+        ALLOC_MEMORY(&fa->toplevelNodes[idx], 1);
+        return fa->toplevelNodes[idx];
 }
 
 //XXX: if we detect that this is an interface block, we'll return NULL
@@ -606,7 +638,7 @@ static void parse_FuncDefn_or_FuncDecl(struct GP_Ctx *ctx)
                 funcDecl->argTypeExprs = argTypeExprs;
                 funcDecl->argNames = argNames;
                 funcDecl->numArgs = numArgs;
-                struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                struct GP_ToplevelNode *node = gp_add_new_toplevel_node(ctx);
                 node->directiveKind = GP_DIRECTIVE_FUNCDECL;
                 node->data.tFuncdecl = funcDecl;
         }
@@ -621,24 +653,42 @@ static void parse_FuncDefn_or_FuncDecl(struct GP_Ctx *ctx)
                 funcDefn->argTypeExprs = argTypeExprs;
                 funcDefn->argNames = argNames;
                 funcDefn->numArgs = numArgs;
-                struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                struct GP_ToplevelNode *node = gp_add_new_toplevel_node(ctx);
                 node->directiveKind = GP_DIRECTIVE_FUNCDEFN;
                 node->data.tFuncdefn = funcDefn;
         }
 }
 
-void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
+static int gp_compare_ProgramUniforms(const void *a, const void *b)
+{
+        const struct GP_ProgramUniform *x = a;
+        const struct GP_ProgramUniform *y = b;
+        if (x->programIndex != y->programIndex)
+                return (x->programIndex > y->programIndex) - (x->programIndex < y->programIndex);
+        return strcmp(x->uniformName, y->uniformName);
+}
+
+static int gp_compare_ProgramAttributes(const void *a, const void *b)
+{
+        const struct GP_ProgramAttribute *x = a;
+        const struct GP_ProgramAttribute *y = b;
+        if (x->programIndex != y->programIndex)
+                return (x->programIndex > y->programIndex) - (x->programIndex < y->programIndex);
+        return strcmp(x->attributeName, y->attributeName);
+}
+
+static void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
 {
         int fileIndex = -1;
-        for (int i = 0; i < ctx->numFiles; i++)
-                if (!strcmp(ctx->shaderInfo[shaderIndex].fileID, ctx->fileInfo[i].fileID))
+        for (int i = 0; i < ctx->desc.numFiles; i++)
+                if (!strcmp(ctx->desc.shaderInfo[shaderIndex].fileID, ctx->desc.fileInfo[i].fileID))
                         fileIndex = i;
         if (fileIndex == -1)
                 gp_fatal_f("No source file for shader '%s'",
-                        ctx->shaderInfo[shaderIndex].shaderName);
-        const char *fileID = ctx->fileInfo[fileIndex].fileID;
-        const char *fileContents = ctx->fileInfo[fileIndex].contents;
-        int fileSize = ctx->fileInfo[fileIndex].size;
+                        ctx->desc.shaderInfo[shaderIndex].shaderName);
+        const char *fileID = ctx->desc.fileInfo[fileIndex].fileID;
+        const char *fileContents = ctx->desc.fileInfo[fileIndex].contents;
+        int fileSize = ctx->desc.fileInfo[fileIndex].size;
 
         ctx->filepath = fileID;
         ctx->fileContents = fileContents;
@@ -657,23 +707,20 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
         {
         struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[shaderIndex];
         memset(fa, 0, sizeof *fa);
-        int filepathLength = (int) strlen(fileID);
-        ALLOC_MEMORY(&fa->filepath, filepathLength + 1);
-        memcpy(fa->filepath, fileID, filepathLength + 1);
         // switch
         ctx->currentShaderIndex = shaderIndex;
         }
 
         while (look_token(ctx)) {
                 if (is_keyword(ctx, "uniform")) {
-                        struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                        struct GP_ToplevelNode *node = gp_add_new_toplevel_node(ctx);
                         node->directiveKind = GP_DIRECTIVE_UNIFORM;
                         node->data.tUniform = parse_uniform(ctx);
                 }
                 else if (is_keyword(ctx, "in")
                          || is_keyword(ctx, "out")
                          || is_keyword(ctx, "flat")) {
-                        struct GP_ToplevelNode *node = add_new_toplevel_node(ctx);
+                        struct GP_ToplevelNode *node = gp_add_new_toplevel_node(ctx);
                         node->directiveKind = GP_DIRECTIVE_VARIABLE;
                         node->data.tVariable = parse_variable(ctx);
                 }
@@ -686,6 +733,103 @@ void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
         }
 }
 
+static void gp_postprocess(struct GP_Ctx *ctx)
+{        
+        /*
+        POST PROCESSING
+        */
+
+        for (int i = 0; i < ctx->desc.numFiles; i++) {
+                struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[i];
+                for (int j = 0; j < fa->numToplevelNodes; j++) {
+                        struct GP_ToplevelNode *node = fa->toplevelNodes[j];
+                        if (node->directiveKind == GP_DIRECTIVE_UNIFORM) {
+                                struct GP_UniformDecl *decl = node->data.tUniform;
+                                for (int k = 0; k < ctx->desc.numLinks; k++) {
+                                        struct GP_LinkInfo *linkInfo = &ctx->desc.linkInfo[k];
+                                        if (linkInfo->shaderIndex == i) {
+                                                int programIndex = linkInfo->programIndex;
+                                                int uniformIndex = ctx->numProgramUniforms++;
+                                                REALLOC_MEMORY(&ctx->programUniforms, ctx->numProgramUniforms);
+                                                ctx->programUniforms[uniformIndex].programIndex = programIndex;
+                                                ctx->programUniforms[uniformIndex].typeKind = decl->uniDeclTypeExpr->primtypeKind;
+                                                ctx->programUniforms[uniformIndex].uniformName = decl->uniDeclName;
+                                        }
+                                }
+                        }
+                        else if (node->directiveKind == GP_DIRECTIVE_VARIABLE) {
+                                struct GP_VariableDecl *decl = node->data.tVariable;
+                                // An attribute is an IN variable in a vertex shader
+                                if (ctx->desc.shaderInfo[i].shaderType != GP_SHADERTYPE_VERTEX)
+                                        continue;
+                                if (decl->inOrOut != 0 /* IN */)
+                                        continue;
+                                for (int k = 0; k < ctx->desc.numLinks; k++) {
+                                        struct GP_LinkInfo *linkInfo = &ctx->desc.linkInfo[k];
+                                        if (linkInfo->shaderIndex == i) {
+                                                int programIndex = linkInfo->programIndex;
+                                                int attributeIndex = ctx->numProgramAttributes++;
+                                                REALLOC_MEMORY(&ctx->programAttributes, ctx->numProgramAttributes);
+                                                ctx->programAttributes[attributeIndex].programIndex = programIndex;
+                                                ctx->programAttributes[attributeIndex].typeKind = decl->typeExpr->primtypeKind;
+                                                ctx->programAttributes[attributeIndex].attributeName = decl->name;
+                                        }
+                                }
+                        }
+                }
+        }
+
+        qsort(ctx->programUniforms, ctx->numProgramUniforms, sizeof *ctx->programUniforms, gp_compare_ProgramUniforms);
+        qsort(ctx->programAttributes, ctx->numProgramAttributes, sizeof *ctx->programAttributes, gp_compare_ProgramAttributes);
+
+        int j = 0;
+        for (int i = 0; i < ctx->numProgramUniforms; i++) {
+                if (j > 0
+                        && ctx->programUniforms[i].programIndex == ctx->programUniforms[j-1].programIndex
+                        && !strcmp(ctx->programUniforms[i].uniformName, ctx->programUniforms[j-1].uniformName)) {
+                        if (ctx->programUniforms[i].typeKind != ctx->programUniforms[j-1].typeKind) {
+                                const char *programName = ctx->desc.programInfo[ctx->programUniforms[i].programIndex].programName;
+                                const char *uniformName = ctx->programUniforms[i].uniformName;
+                                gp_fatal_f("The shader program '%s' cannot be linked since there are multiple uniforms '%s' with incompatible types",
+                                        programName, uniformName);
+                        }
+                }
+                else {
+                        ctx->programUniforms[j] = ctx->programUniforms[i];
+                        j++;
+                }
+        }
+        ctx->numProgramUniforms = j;
+
+        j = 0;
+        for (int i = 0; i < ctx->numProgramAttributes; i++) {
+                if (j > 0
+                        && ctx->programAttributes[i].programIndex == ctx->programAttributes[j-1].programIndex
+                        && !strcmp(ctx->programAttributes[i].attributeName, ctx->programAttributes[j-1].attributeName)) {
+                        if (ctx->programAttributes[i].typeKind != ctx->programAttributes[j-1].typeKind) {
+                                const char *programName = ctx->desc.programInfo[ctx->programAttributes[i].programIndex].programName;
+                                const char *attributeName = ctx->programAttributes[i].attributeName;
+                                gp_fatal_f("The shader program '%s' cannot be linked since there are multiple attributes '%s' with incompatible types.",
+                                        programName, attributeName);
+                        }
+                }
+                else {
+                        ctx->programAttributes[j] = ctx->programAttributes[i];
+                        j++;
+                }
+        }
+        ctx->numProgramAttributes = j;
+
+        /* TODO: I guess it's not allowed to have a uniform and a variable by the same name? */
+}
+
+void gp_parse(struct GP_Ctx *ctx)
+{
+        for (int i = 0; i < ctx->desc.numShaders; i++)
+                gp_parse_shader(ctx, i);
+        gp_postprocess(ctx);
+}
+
 void gp_setup(struct GP_Ctx *ctx)
 {
         memset(ctx, 0, sizeof *ctx);
@@ -694,8 +838,6 @@ void gp_setup(struct GP_Ctx *ctx)
 void gp_teardown(struct GP_Ctx *ctx)
 {
         FREE_MEMORY(&ctx->tokenBuffer);
-        for (int i = 0; i < ctx->numFiles; i++)
-                FREE_MEMORY(&ctx->shaderfileAsts[i].filepath);
         FREE_MEMORY(&ctx->shaderfileAsts);
         memset(ctx, 0, sizeof *ctx);
 }

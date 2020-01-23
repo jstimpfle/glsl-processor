@@ -1,5 +1,3 @@
-#undef DATA
-#define DATA
 #include <glsl-processor/ast.h>
 #include <glsl-processor/parse.h>
 

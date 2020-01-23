@@ -2,7 +2,6 @@
 #define GP_AST_H_INCLUDED
 
 #include <glsl-processor/defs.h>
-#include <glsl-processor/parse.h>  // TODO: unify these two files
 
 enum {
         GP_SHADERTYPE_VERTEX,
@@ -76,6 +75,7 @@ enum {
         GP_NUM_BINOP_KINDS,
 };
 
+// TODO: The "prim" no longer makes sense
 enum {
         GP_PRIMTYPE_BOOL,
         GP_PRIMTYPE_INT,
@@ -213,8 +213,6 @@ struct GP_ToplevelNode {
 };
 
 struct GP_ShaderfileAst {
-        char *filepath;
-
         // For now, for simplicity and pointer stability, an array of pointers...
         struct GP_ToplevelNode **toplevelNodes;
         int numToplevelNodes;
@@ -230,17 +228,5 @@ extern const struct GP_BinopInfo gp_binopInfo[GP_NUM_BINOP_KINDS];
 extern const struct GP_BinopTokenInfo gp_binopTokenInfo[];
 extern const int gp_numUnopToken;
 extern const int gp_numBinopTokens;
-
-char *alloc_string(struct GP_Ctx *ctx, const char *string);
-struct GP_TypeExpr *create_typeexpr(struct GP_Ctx *ctx);
-struct GP_UniformDecl *create_uniformdecl(struct GP_Ctx *ctx);
-struct GP_VariableDecl *create_variabledecl(struct GP_Ctx *ctx);
-struct GP_FuncDecl *create_funcdecl(struct GP_Ctx *ctx);
-struct GP_FuncDefn *create_funcdefn(struct GP_Ctx *ctx);
-
-struct GP_ToplevelNode *add_new_toplevel_node(struct GP_Ctx *ctx);
-
-void gp_setup(struct GP_Ctx *ctx);
-void gp_teardown(struct GP_Ctx *ctx);
 
 #endif

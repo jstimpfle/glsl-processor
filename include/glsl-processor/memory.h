@@ -1,10 +1,10 @@
-#ifndef GP_MEMORYALLOC_H_INCLUDED
-#define GP_MEMORYALLOC_H_INCLUDED
+#ifndef GP_MEMORY_H_INCLUDED
+#define GP_MEMORY_H_INCLUDED
 
 #include <glsl-processor/logging.h>
 
-void _gp_alloc_memory(struct GP_LogCtx logCtx, void **outPtr, int numElems, int elemSize);
-void _gp_realloc_memory(struct GP_LogCtx logCtx, void **inoutPtr, int numElems, int elemSize);
+void _gp_alloc_memory(struct GP_LogCtx logCtx, void **outPtr, size_t numElems, size_t elemSize);
+void _gp_realloc_memory(struct GP_LogCtx logCtx, void **inoutPtr, size_t numElems, size_t elemSize);
 void _gp_free_memory(struct GP_LogCtx logCtx, void **inoutPtr);
 
 #define alloc_memory(outPtr, numElems, elemSize) _gp_alloc_memory(GP_MAKE_LOGCTX(), (outPtr), (numElems), (elemSize))

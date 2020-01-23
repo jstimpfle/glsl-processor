@@ -1,6 +1,8 @@
 #ifndef GP_PARSE_H_INCLUDED
 #define GP_PARSE_H_INCLUDED
 
+#include <glsl-processor/ast.h>
+
 struct GP_FileInfo {
         char *fileID;
         char *contents;
@@ -22,6 +24,17 @@ struct GP_LinkInfo {
         int shaderIndex;
 };
 
+struct GP_Desc {
+        struct GP_FileInfo *fileInfo;
+        struct GP_ProgramInfo *programInfo;
+        struct GP_ShaderInfo *shaderInfo;
+        struct GP_LinkInfo *linkInfo;
+        int numFiles;
+        int numPrograms;
+        int numShaders;
+        int numLinks;
+};
+
 struct GP_ProgramUniform {
         int programIndex;
         int typeKind;
@@ -35,15 +48,10 @@ struct GP_ProgramAttribute {
 };
 
 struct GP_Ctx {
-        struct GP_FileInfo *fileInfo;
-        struct GP_ProgramInfo *programInfo;
-        struct GP_ShaderInfo *shaderInfo;
-        struct GP_LinkInfo *linkInfo;
-        int numFiles;
-        int numPrograms;
-        int numShaders;
-        int numLinks;
+        // copy of input data
+        struct GP_Desc desc;
 
+        // allocated and written in parsing stage
         struct GP_ShaderfileAst *shaderfileAsts;
         int currentShaderIndex;  // global state for simpler code
 
@@ -75,7 +83,7 @@ struct GP_Ctx {
 
 void gp_setup(struct GP_Ctx *ctx);
 void gp_teardown(struct GP_Ctx *ctx);
+void gp_parse(struct GP_Ctx *ctx);
 
-void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex);
 
 #endif

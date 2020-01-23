@@ -1,6 +1,8 @@
 #ifndef GP_BUILDER_H_INCLUDED
 #define GP_BUILDER_H_INCLUDED
 
+#include <glsl-processor/parse.h>
+
 struct GP_Builder_File;
 struct GP_Builder_Program;
 struct GP_Builder_Shader;

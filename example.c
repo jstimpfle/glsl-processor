@@ -1,6 +1,8 @@
+#include <glsl-processor/defs.h>
 #include <glsl-processor/logging.h>
-#include <glsl-processor/memoryalloc.h>
-#include <glsl-processor/ast.h>
+#include <glsl-processor/memory.h>
+#include <glsl-processor/parse.h>
+#include <glsl-processor/builder.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -201,21 +203,21 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 "\n");
 
         begin_enum(wc);
-        for (int i = 0; i < ctx->numPrograms; i++)
-                add_enum_item_2(wc, "PROGRAM", ctx->programInfo[i].programName);
+        for (int i = 0; i < ctx->desc.numPrograms; i++)
+                add_enum_item_2(wc, "PROGRAM", ctx->desc.programInfo[i].programName);
         add_enum_item(wc, "NUM_PROGRAM_KINDS");
         end_enum(wc);
 
         begin_enum(wc);
-        for (int i = 0; i < ctx->numShaders; i++)
-                add_enum_item_2(wc, "SHADER", ctx->shaderInfo[i].shaderName);
+        for (int i = 0; i < ctx->desc.numShaders; i++)
+                add_enum_item_2(wc, "SHADER", ctx->desc.shaderInfo[i].shaderName);
         add_enum_item(wc, "NUM_SHADER_KINDS");
         end_enum(wc);
 
         begin_enum(wc);
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
-                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
                 const char *uniformName = ctx->programUniforms[i].uniformName;
                 add_enum_item_3(wc, "UNIFORM", programName, uniformName);
         }
@@ -225,7 +227,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         begin_enum(wc);
         for (int i = 0; i < ctx->numProgramAttributes; i++) {
                 int programIndex = ctx->programAttributes[i].programIndex;
-                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
                 const char *attributeName = ctx->programAttributes[i].attributeName;
                 add_enum_item_3(wc, "ATTRIBUTE", programName, attributeName);
         }
@@ -246,26 +248,26 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         append_to_buffer_f(&wc->cFileHandle, "#include <shaders.h>\n\n");
 
         append_to_buffer_f(&wc->cFileHandle, "const struct SM_ProgramInfo smProgramInfo[NUM_PROGRAM_KINDS] = {\n");
-        for (int i = 0; i < ctx->numPrograms; i++) {
-                const char *programName = ctx->programInfo[i].programName;
+        for (int i = 0; i < ctx->desc.numPrograms; i++) {
+                const char *programName = ctx->desc.programInfo[i].programName;
                 append_to_buffer_f(&wc->cFileHandle, INDENT "[PROGRAM_%s] = { \"%s\" },\n", programName, programName);
         }
         append_to_buffer_f(&wc->cFileHandle, "};\n\n");
 
         append_to_buffer_f(&wc->cFileHandle, "const struct SM_ShaderInfo smShaderInfo[NUM_SHADER_KINDS] = {\n");
-        for (int i = 0; i < ctx->numShaders; i++) {
-                struct GP_ShaderInfo *info = &ctx->shaderInfo[i];
+        for (int i = 0; i < ctx->desc.numShaders; i++) {
+                struct GP_ShaderInfo *info = &ctx->desc.shaderInfo[i];
                 append_to_buffer_f(&wc->cFileHandle, INDENT "[SHADER_%s] = { %s, \"%s\", \"%s\" },\n",
                         info->shaderName, gp_shadertypeKindString[info->shaderType], info->shaderName, info->fileID);
         }
         append_to_buffer_f(&wc->cFileHandle, "};\n\n");
         
         append_to_buffer_f(&wc->cFileHandle, "const struct SM_LinkInfo smLinkInfo[] = {\n");
-        for (int i = 0; i < ctx->numLinks; i++) {
-                int programIndex = ctx->linkInfo[i].programIndex;
-                int shaderIndex = ctx->linkInfo[i].shaderIndex;
-                const char *programName = ctx->programInfo[programIndex].programName;
-                const char *shaderName = ctx->shaderInfo[shaderIndex].shaderName;
+        for (int i = 0; i < ctx->desc.numLinks; i++) {
+                int programIndex = ctx->desc.linkInfo[i].programIndex;
+                int shaderIndex = ctx->desc.linkInfo[i].shaderIndex;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
+                const char *shaderName = ctx->desc.shaderInfo[shaderIndex].shaderName;
                 append_to_buffer_f(&wc->cFileHandle, INDENT "{ PROGRAM_%s, SHADER_%s },\n", programName, shaderName);
         }
         append_to_buffer_f(&wc->cFileHandle, "};\n\n");
@@ -275,7 +277,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
                 int primtypeKind = ctx->programUniforms[i].typeKind;
-                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
                 const char *uniformName = ctx->programUniforms[i].uniformName;
                 const char *typeName = PRIMTYPE_to_GRAFIKUNIFORMTYPE[primtypeKind];
                 GP_ENSURE(typeName != NULL);
@@ -288,7 +290,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         for (int i = 0; i < ctx->numProgramAttributes; i++) {
                 int programIndex = ctx->programAttributes[i].programIndex;
                 int primtypeKind = ctx->programAttributes[i].typeKind;
-                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
                 const char *attributeName = ctx->programAttributes[i].attributeName;
                 const char *typeName = PRIMTYPE_to_GRAFIKATTRIBUTETYPE[primtypeKind];
                 GP_ENSURE(typeName != NULL);
@@ -337,7 +339,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
                 int primtypeKind = ctx->programUniforms[i].typeKind;
-                const char *programName = ctx->programInfo[programIndex].programName;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
                 if (i == 0 || programIndex != ctx->programUniforms[i - 1].programIndex) {
                         append_to_buffer_f(&wc->hFileHandle, "static inline void %sShader_render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
                         append_to_buffer_f(&wc->hFileHandle, "static inline void %sShader_render_primitive(int gfxPrimitiveKind, GfxVAO vao, int firstVertice, int length) { render_primitive_with_GfxProgram(gfxPrimitiveKind, gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
@@ -366,8 +368,8 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
                 int primtypeKind = ctx->programUniforms[i].typeKind;
-                const char *programName = ctx->programInfo[programIndex].programName;
                 const char *uniformName = ctx->programUniforms[i].uniformName;
+                const char *programName = ctx->desc.programInfo[programIndex].programName;
                 if (i == 0 || programIndex != ctx->programUniforms[i - 1].programIndex) {
                         append_to_buffer_f(&wc->hFileHandle, "static struct {\n");
                         append_to_buffer_f(&wc->hFileHandle, INDENT "static inline void render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName);
@@ -405,4 +407,77 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         teardown_buffer(&wc->cFilepath);
         teardown_buffer(&wc->hFileHandle);
         teardown_buffer(&wc->cFileHandle);
+}
+
+static const struct {
+        const char *shaderID;
+        const char *fileID;
+        int shadertypeKind;
+} shaders[] = {
+#define VERT(x) { x "_vert", "example-shaders/" x ".vert", GP_SHADERTYPE_VERTEX }
+#define FRAG(x) { x "_frag", "example-shaders/" x ".frag", GP_SHADERTYPE_FRAGMENT }
+        VERT("line"),
+        FRAG("line"),
+        VERT("circle"),
+        FRAG("circle"),
+        VERT("arc"),
+        FRAG("arc"),
+#undef VERT
+#undef FRAG
+};
+
+static const char *const programs[] = {
+        "line",
+        "circle",
+        "arc",
+};
+
+static const struct {
+        const char *programID;
+        const char *shaderID;
+} links[] = {
+        { "line", "line_vert" },
+        { "line", "line_frag" },
+        { "circle", "circle_vert" },
+        { "circle", "circle_frag" },
+        { "arc", "arc_vert" },
+        { "arc", "arc_frag" },
+};
+
+int main(void)
+{
+        struct GP_Builder sp = {0};
+        for (int i = 0; i < LENGTH(shaders); i++) {
+                const char *filepath = shaders[i].fileID;
+                FILE *f = fopen(filepath, "rb");
+                if (f == NULL)
+                        gp_fatal_f("Failed to open shader file '%s'", filepath);
+                fseek(f, 0, SEEK_END);
+                long size = ftell(f);
+                char *data;
+                ALLOC_MEMORY(&data, size + 1);
+                fseek(f, 0, SEEK_SET);
+                size_t nread = fread(data, 1, size + 1, f);
+                if (nread != size)
+                        gp_fatal_f("Expected to read %d bytes from '%s', but got %d",
+                                size, filepath, nread);
+                if (ferror(f))
+                        gp_fatal_f("I/O error while reading from '%s'", filepath);
+                fclose(f);
+                gp_builder_create_file(&sp, shaders[i].fileID, data, size);
+        }
+        for (int i = 0; i < LENGTH(shaders); i++)
+                gp_builder_create_shader(&sp, shaders[i].shaderID, shaders[i].fileID, shaders[i].shadertypeKind);
+        for (int i = 0; i < LENGTH(programs); i++)
+                gp_builder_create_program(&sp, programs[i]);
+        for (int i = 0; i < LENGTH(links); i++)
+                gp_builder_create_link(&sp, links[i].programID, links[i].shaderID);
+        gp_builder_process(&sp);
+        struct GP_Ctx ctx = {0};
+        gp_builder_to_ctx(&sp, &ctx);
+        gp_parse(&ctx);
+        write_c_interface(&ctx, "autogenerated/");
+        gp_teardown(&ctx);
+        gp_builder_teardown(&sp);
+        return 0;
 }
