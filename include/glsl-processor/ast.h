@@ -77,19 +77,19 @@ enum {
 
 // TODO: The "prim" no longer makes sense
 enum {
-        GP_PRIMTYPE_BOOL,
-        GP_PRIMTYPE_INT,
-        GP_PRIMTYPE_UINT,
-        GP_PRIMTYPE_FLOAT,
-        GP_PRIMTYPE_DOUBLE,
-        GP_PRIMTYPE_VEC2,
-        GP_PRIMTYPE_VEC3,
-        GP_PRIMTYPE_VEC4,
-        GP_PRIMTYPE_MAT2,
-        GP_PRIMTYPE_MAT3,
-        GP_PRIMTYPE_MAT4,
-        GP_PRIMTYPE_SAMPLER2D,
-        GP_NUM_PRIMTYPE_KINDS
+        GP_TYPE_BOOL,
+        GP_TYPE_INT,
+        GP_TYPE_UINT,
+        GP_TYPE_FLOAT,
+        GP_TYPE_DOUBLE,
+        GP_TYPE_VEC2,
+        GP_TYPE_VEC3,
+        GP_TYPE_VEC4,
+        GP_TYPE_MAT2,
+        GP_TYPE_MAT3,
+        GP_TYPE_MAT4,
+        GP_TYPE_SAMPLER2D,
+        GP_NUM_TYPE_KINDS
 };
 
 struct GP_UnopInfo {
@@ -164,7 +164,7 @@ struct GP_StmtNode {
 a fixed number of types (which are all built in) and some parts of the code
 even rely on that fact. */
 struct GP_TypeExpr {
-        int primtypeKind;
+        int typeKind;
 };
 
 struct GP_UniformDecl {
@@ -219,8 +219,8 @@ struct GP_ShaderfileAst {
 };
 
 extern const char *const gp_tokenKindString[GP_NUM_TOKEN_KINDS];
-extern const char *const gp_primtypeKindString[GP_NUM_PRIMTYPE_KINDS];
-extern const char *const gp_primtypeString[GP_NUM_PRIMTYPE_KINDS];
+extern const char *const gp_typeKindString[GP_NUM_TYPE_KINDS];
+extern const char *const gp_typeString[GP_NUM_TYPE_KINDS];
 extern const char *const gp_shadertypeKindString[GP_NUM_SHADERTYPE_KINDS];
 extern const struct GP_UnopInfo gp_unopInfo[GP_NUM_UNOP_KINDS];
 extern const struct GP_UnopTokenInfo gp_unopTokenInfo[];

@@ -300,8 +300,8 @@ static int is_keyword(struct GP_Ctx *ctx, const char *keyword)
 
 static int is_known_type_name(struct GP_Ctx *ctx)
 {
-        for (int i = 0; i < GP_NUM_PRIMTYPE_KINDS; i++)
-                if (!strcmp(ctx->tokenBuffer, gp_primtypeString[i]))
+        for (int i = 0; i < GP_NUM_TYPE_KINDS; i++)
+                if (!strcmp(ctx->tokenBuffer, gp_typeString[i]))
                         return 1;
         return 0;
 }
@@ -392,12 +392,12 @@ static struct GP_TypeExpr *parse_typeexpr(struct GP_Ctx *ctx)
                 consume_token(ctx);
                 expect_token_kind(ctx, GP_TOKEN_NAME);
         }
-        for (int i = 0; i < GP_NUM_PRIMTYPE_KINDS; i++) {
-                if (is_keyword(ctx, gp_primtypeString[i])) {
+        for (int i = 0; i < GP_NUM_TYPE_KINDS; i++) {
+                if (is_keyword(ctx, gp_typeString[i])) {
                         consume_token(ctx);
-                        //message_f("parsed type %s", primtypeInfo[i].name);
+                        //message_f("parsed type %s", typeInfo[i].name);
                         struct GP_TypeExpr *typeExpr = create_typeexpr(ctx);
-                        typeExpr->primtypeKind = i;
+                        typeExpr->typeKind = i;
                         return typeExpr;
                 }
         }
@@ -424,7 +424,7 @@ static struct GP_TypeExpr *parse_type_or_void(struct GP_Ctx *ctx)
         if (is_keyword(ctx, "void")) {
                 consume_token(ctx);
                 struct GP_TypeExpr *typeExpr = create_typeexpr(ctx);
-                typeExpr->primtypeKind = -1;
+                typeExpr->typeKind = -1;
                 return typeExpr;
         }
         return parse_typeexpr(ctx);
@@ -472,7 +472,7 @@ static struct GP_UniformDecl *parse_uniform(struct GP_Ctx *ctx)
         struct GP_UniformDecl *uniformDecl = create_uniformdecl(ctx);
         uniformDecl->uniDeclName = name;
         uniformDecl->uniDeclTypeExpr = typeExpr;
-        //printf("parse uniform (%s) %s %s\n", ctx->filepath, name, primtypeKindString[typeExpr->primtypeKind]);
+        //printf("parse uniform (%s) %s %s\n", ctx->filepath, name, typeKindString[typeExpr->typeKind]);
         return uniformDecl;
 }
 
@@ -752,7 +752,7 @@ static void gp_postprocess(struct GP_Ctx *ctx)
                                                 int uniformIndex = ctx->numProgramUniforms++;
                                                 REALLOC_MEMORY(&ctx->programUniforms, ctx->numProgramUniforms);
                                                 ctx->programUniforms[uniformIndex].programIndex = programIndex;
-                                                ctx->programUniforms[uniformIndex].typeKind = decl->uniDeclTypeExpr->primtypeKind;
+                                                ctx->programUniforms[uniformIndex].typeKind = decl->uniDeclTypeExpr->typeKind;
                                                 ctx->programUniforms[uniformIndex].uniformName = decl->uniDeclName;
                                         }
                                 }
@@ -771,7 +771,7 @@ static void gp_postprocess(struct GP_Ctx *ctx)
                                                 int attributeIndex = ctx->numProgramAttributes++;
                                                 REALLOC_MEMORY(&ctx->programAttributes, ctx->numProgramAttributes);
                                                 ctx->programAttributes[attributeIndex].programIndex = programIndex;
-                                                ctx->programAttributes[attributeIndex].typeKind = decl->typeExpr->primtypeKind;
+                                                ctx->programAttributes[attributeIndex].typeKind = decl->typeExpr->typeKind;
                                                 ctx->programAttributes[attributeIndex].attributeName = decl->name;
                                         }
                                 }

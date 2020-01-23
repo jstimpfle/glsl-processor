@@ -156,29 +156,29 @@ static void add_enum_item_3(struct WriteCtx *wc, const char *name1, const char *
         append_to_buffer_f(&wc->hFileHandle, INDENT "%s_%s_%s,\n", name1, name2, name3);
 }
 
-static const char *const PRIMTYPE_to_GRAFIKATTRIBUTETYPE[GP_NUM_PRIMTYPE_KINDS] = {
-        [GP_PRIMTYPE_BOOL] = "GRAFIKATTRTYPE_BOOL",
-        [GP_PRIMTYPE_INT] = "GRAFIKATTRTYPE_INT",
-        [GP_PRIMTYPE_UINT] = "GRAFIKATTRTYPE_UINT",
-        [GP_PRIMTYPE_FLOAT] = "GRAFIKATTRTYPE_FLOAT",
-        [GP_PRIMTYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
-        [GP_PRIMTYPE_VEC2] = "GRAFIKATTRTYPE_VEC2",
-        [GP_PRIMTYPE_VEC3] = "GRAFIKATTRTYPE_VEC3",
-        [GP_PRIMTYPE_VEC4] = "GRAFIKATTRTYPE_VEC4",
+static const char *const TYPE_to_GRAFIKATTRIBUTETYPE[GP_NUM_TYPE_KINDS] = {
+        [GP_TYPE_BOOL] = "GRAFIKATTRTYPE_BOOL",
+        [GP_TYPE_INT] = "GRAFIKATTRTYPE_INT",
+        [GP_TYPE_UINT] = "GRAFIKATTRTYPE_UINT",
+        [GP_TYPE_FLOAT] = "GRAFIKATTRTYPE_FLOAT",
+        [GP_TYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
+        [GP_TYPE_VEC2] = "GRAFIKATTRTYPE_VEC2",
+        [GP_TYPE_VEC3] = "GRAFIKATTRTYPE_VEC3",
+        [GP_TYPE_VEC4] = "GRAFIKATTRTYPE_VEC4",
 };
 
-static const char *const PRIMTYPE_to_GRAFIKUNIFORMTYPE[GP_NUM_PRIMTYPE_KINDS] = {
-        [GP_PRIMTYPE_BOOL] = "GRAFIKUNIFORMTYPE_BOOL",
-        [GP_PRIMTYPE_INT] = "GRAFIKUNIFORMTYPE_INT",
-        [GP_PRIMTYPE_UINT] = "GRAFIKUNIFORMTYPE_UINT",
-        [GP_PRIMTYPE_FLOAT] = "GRAFIKUNIFORMTYPE_FLOAT",
-        [GP_PRIMTYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
-        [GP_PRIMTYPE_VEC2] = "GRAFIKUNIFORMTYPE_VEC2",
-        [GP_PRIMTYPE_VEC3] = "GRAFIKUNIFORMTYPE_VEC3",
-        [GP_PRIMTYPE_VEC4] = "GRAFIKUNIFORMTYPE_VEC4",
-        [GP_PRIMTYPE_MAT2] = "GRAFIKUNIFORMTYPE_MAT2",
-        [GP_PRIMTYPE_MAT3] = "GRAFIKUNIFORMTYPE_MAT3",
-        [GP_PRIMTYPE_MAT4] = "GRAFIKUNIFORMTYPE_MAT4",
+static const char *const TYPE_to_GRAFIKUNIFORMTYPE[GP_NUM_TYPE_KINDS] = {
+        [GP_TYPE_BOOL] = "GRAFIKUNIFORMTYPE_BOOL",
+        [GP_TYPE_INT] = "GRAFIKUNIFORMTYPE_INT",
+        [GP_TYPE_UINT] = "GRAFIKUNIFORMTYPE_UINT",
+        [GP_TYPE_FLOAT] = "GRAFIKUNIFORMTYPE_FLOAT",
+        [GP_TYPE_DOUBLE] = "GRAFIKUNIFORMTYPE_DOUBLE",
+        [GP_TYPE_VEC2] = "GRAFIKUNIFORMTYPE_VEC2",
+        [GP_TYPE_VEC3] = "GRAFIKUNIFORMTYPE_VEC3",
+        [GP_TYPE_VEC4] = "GRAFIKUNIFORMTYPE_VEC4",
+        [GP_TYPE_MAT2] = "GRAFIKUNIFORMTYPE_MAT2",
+        [GP_TYPE_MAT3] = "GRAFIKUNIFORMTYPE_MAT3",
+        [GP_TYPE_MAT4] = "GRAFIKUNIFORMTYPE_MAT4",
 };
 
 void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
@@ -276,10 +276,10 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         append_to_buffer_f(&wc->cFileHandle, "const struct SM_UniformInfo smUniformInfo[NUM_UNIFORM_KINDS] = {\n");
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
-                int primtypeKind = ctx->programUniforms[i].typeKind;
+                int typeKind = ctx->programUniforms[i].typeKind;
                 const char *programName = ctx->desc.programInfo[programIndex].programName;
                 const char *uniformName = ctx->programUniforms[i].uniformName;
-                const char *typeName = PRIMTYPE_to_GRAFIKUNIFORMTYPE[primtypeKind];
+                const char *typeName = TYPE_to_GRAFIKUNIFORMTYPE[typeKind];
                 GP_ENSURE(typeName != NULL);
                 append_to_buffer_f(&wc->cFileHandle, INDENT "[UNIFORM_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
                         programName, uniformName, programName, typeName, uniformName);
@@ -289,10 +289,10 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
         append_to_buffer_f(&wc->cFileHandle, "const struct SM_AttributeInfo smAttributeInfo[NUM_ATTRIBUTE_KINDS] = {\n");
         for (int i = 0; i < ctx->numProgramAttributes; i++) {
                 int programIndex = ctx->programAttributes[i].programIndex;
-                int primtypeKind = ctx->programAttributes[i].typeKind;
+                int typeKind = ctx->programAttributes[i].typeKind;
                 const char *programName = ctx->desc.programInfo[programIndex].programName;
                 const char *attributeName = ctx->programAttributes[i].attributeName;
-                const char *typeName = PRIMTYPE_to_GRAFIKATTRIBUTETYPE[primtypeKind];
+                const char *typeName = TYPE_to_GRAFIKATTRIBUTETYPE[typeKind];
                 GP_ENSURE(typeName != NULL);
                 append_to_buffer_f(&wc->cFileHandle, INDENT "[ATTRIBUTE_%s_%s] = { PROGRAM_%s, %s, \"%s\" },\n",
                         programName, attributeName, programName, typeName, attributeName);
@@ -338,7 +338,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
 
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
-                int primtypeKind = ctx->programUniforms[i].typeKind;
+                int typeKind = ctx->programUniforms[i].typeKind;
                 const char *programName = ctx->desc.programInfo[programIndex].programName;
                 if (i == 0 || programIndex != ctx->programUniforms[i - 1].programIndex) {
                         append_to_buffer_f(&wc->hFileHandle, "static inline void %sShader_render(GfxVAO vao, int firstVertice, int length) { render_with_GfxProgram(gfxProgram[PROGRAM_%s], vao, firstVertice, length); }\n", programName, programName);
@@ -347,15 +347,15 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 const char *uniformName = ctx->programUniforms[i].uniformName;
                 append_to_buffer_f(&wc->hFileHandle, "static inline void %sShader_set_%s", programName, uniformName);
                 const char *fmt;
-                switch (primtypeKind) {
-                case GP_PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
-                case GP_PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
-                case GP_PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
-                case GP_PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
-                case GP_PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
-                case GP_PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
-                case GP_PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
-                case GP_PRIMTYPE_SAMPLER2D: continue;  // cannot be set, can it?
+                switch (typeKind) {
+                case GP_TYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
+                case GP_TYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
+                case GP_TYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
+                case GP_TYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
+                case GP_TYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
+                case GP_TYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
+                case GP_TYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                case GP_TYPE_SAMPLER2D: continue;  // cannot be set, can it?
                 default: gp_fatal_f("Not implemented!");
                 }
                 append_to_buffer_f(&wc->hFileHandle, fmt, programName, programName, uniformName);
@@ -367,7 +367,7 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 "#ifdef __cplusplus\n\n");
         for (int i = 0; i < ctx->numProgramUniforms; i++) {
                 int programIndex = ctx->programUniforms[i].programIndex;
-                int primtypeKind = ctx->programUniforms[i].typeKind;
+                int typeKind = ctx->programUniforms[i].typeKind;
                 const char *uniformName = ctx->programUniforms[i].uniformName;
                 const char *programName = ctx->desc.programInfo[programIndex].programName;
                 if (i == 0 || programIndex != ctx->programUniforms[i - 1].programIndex) {
@@ -377,14 +377,14 @@ void write_c_interface(struct GP_Ctx *ctx, const char *autogenDirpath)
                 }
                 append_to_buffer_f(&wc->hFileHandle, INDENT "static inline void set_%s", uniformName);
                 const char *fmt;
-                switch (primtypeKind) {
-                case GP_PRIMTYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
-                case GP_PRIMTYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
-                case GP_PRIMTYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
-                case GP_PRIMTYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
-                case GP_PRIMTYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
-                case GP_PRIMTYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
-                case GP_PRIMTYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
+                switch (typeKind) {
+                case GP_TYPE_FLOAT: fmt = "(float x) { set_GfxProgram_uniform_1f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x); }\n"; break;
+                case GP_TYPE_VEC2: fmt = "(float x, float y) { set_GfxProgram_uniform_2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y); }\n"; break;
+                case GP_TYPE_VEC3: fmt = "(float x, float y, float z) { set_GfxProgram_uniform_3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z); }\n"; break;
+                case GP_TYPE_VEC4: fmt = "(float x, float y, float z, float w) { set_GfxProgram_uniform_4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], x, y, z, w); }\n"; break;
+                case GP_TYPE_MAT2: fmt = "(float *fourFloats) { set_GfxProgram_uniform_mat2f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], fourFloats); }\n"; break;
+                case GP_TYPE_MAT3: fmt = "(float *nineFloats) { set_GfxProgram_uniform_mat3f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], nineFloats); }\n"; break;
+                case GP_TYPE_MAT4: fmt = "(float *sixteenFloats) { set_GfxProgram_uniform_mat4f(gfxProgram[PROGRAM_%s], gfxUniformLocation[UNIFORM_%s_%s], sixteenFloats); }\n"; break;
                 default: gp_fatal_f("Not implemented!");
                 }
                 append_to_buffer_f(&wc->hFileHandle, fmt, programName, programName, uniformName);

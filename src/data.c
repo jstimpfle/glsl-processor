@@ -100,34 +100,34 @@ const int gp_numUnopToken = LENGTH(gp_unopTokenInfo);
 const int gp_numBinopTokens = LENGTH(gp_binopTokenInfo);
 
 
-const char *const gp_primtypeString[GP_NUM_PRIMTYPE_KINDS] = {
-        ENUM_TO_STRING( GP_PRIMTYPE_BOOL, "bool" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_INT, "int" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_UINT, "uint" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_FLOAT, "float" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_DOUBLE, "double" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_VEC2, "vec2" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_VEC3, "vec3" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_VEC4, "vec4" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_MAT2, "mat2" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_MAT3, "mat3" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_MAT4, "mat4" ),
-        ENUM_TO_STRING( GP_PRIMTYPE_SAMPLER2D, "sampler2D" ),
+const char *const gp_typeString[GP_NUM_TYPE_KINDS] = {
+        ENUM_TO_STRING( GP_TYPE_BOOL, "bool" ),
+        ENUM_TO_STRING( GP_TYPE_INT, "int" ),
+        ENUM_TO_STRING( GP_TYPE_UINT, "uint" ),
+        ENUM_TO_STRING( GP_TYPE_FLOAT, "float" ),
+        ENUM_TO_STRING( GP_TYPE_DOUBLE, "double" ),
+        ENUM_TO_STRING( GP_TYPE_VEC2, "vec2" ),
+        ENUM_TO_STRING( GP_TYPE_VEC3, "vec3" ),
+        ENUM_TO_STRING( GP_TYPE_VEC4, "vec4" ),
+        ENUM_TO_STRING( GP_TYPE_MAT2, "mat2" ),
+        ENUM_TO_STRING( GP_TYPE_MAT3, "mat3" ),
+        ENUM_TO_STRING( GP_TYPE_MAT4, "mat4" ),
+        ENUM_TO_STRING( GP_TYPE_SAMPLER2D, "sampler2D" ),
 };
 
-const char *const gp_primtypeKindString[GP_NUM_PRIMTYPE_KINDS] = {
-        ENUM_KIND_STRING(GP_PRIMTYPE_BOOL),
-        ENUM_KIND_STRING(GP_PRIMTYPE_INT),
-        ENUM_KIND_STRING(GP_PRIMTYPE_UINT),
-        ENUM_KIND_STRING(GP_PRIMTYPE_FLOAT),
-        ENUM_KIND_STRING(GP_PRIMTYPE_DOUBLE),
-        ENUM_KIND_STRING(GP_PRIMTYPE_VEC2),
-        ENUM_KIND_STRING(GP_PRIMTYPE_VEC3),
-        ENUM_KIND_STRING(GP_PRIMTYPE_VEC4),
-        ENUM_KIND_STRING(GP_PRIMTYPE_MAT2),
-        ENUM_KIND_STRING(GP_PRIMTYPE_MAT3),
-        ENUM_KIND_STRING(GP_PRIMTYPE_MAT4),
-        ENUM_KIND_STRING(GP_PRIMTYPE_SAMPLER2D),
+const char *const gp_typeKindString[GP_NUM_TYPE_KINDS] = {
+        ENUM_KIND_STRING(GP_TYPE_BOOL),
+        ENUM_KIND_STRING(GP_TYPE_INT),
+        ENUM_KIND_STRING(GP_TYPE_UINT),
+        ENUM_KIND_STRING(GP_TYPE_FLOAT),
+        ENUM_KIND_STRING(GP_TYPE_DOUBLE),
+        ENUM_KIND_STRING(GP_TYPE_VEC2),
+        ENUM_KIND_STRING(GP_TYPE_VEC3),
+        ENUM_KIND_STRING(GP_TYPE_VEC4),
+        ENUM_KIND_STRING(GP_TYPE_MAT2),
+        ENUM_KIND_STRING(GP_TYPE_MAT3),
+        ENUM_KIND_STRING(GP_TYPE_MAT4),
+        ENUM_KIND_STRING(GP_TYPE_SAMPLER2D),
 };
 
 const char *const gp_shadertypeKindString[GP_NUM_SHADERTYPE_KINDS] = {
