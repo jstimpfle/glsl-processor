@@ -739,7 +739,7 @@ static void gp_postprocess(struct GP_Ctx *ctx)
         POST PROCESSING
         */
 
-        for (int i = 0; i < ctx->desc.numFiles; i++) {
+        for (int i = 0; i < ctx->desc.numShaders; i++) {
                 struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[i];
                 for (int j = 0; j < fa->numToplevelNodes; j++) {
                         struct GP_ToplevelNode *node = fa->toplevelNodes[j];

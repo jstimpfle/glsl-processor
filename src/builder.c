@@ -246,6 +246,7 @@ void gp_builder_to_ctx(struct GP_Builder *sp, struct GP_Ctx *ctx)
         REALLOC_MEMORY(&desc->shaderInfo, desc->numShaders);
         REALLOC_MEMORY(&desc->linkInfo, desc->numLinks);
         REALLOC_MEMORY(&ctx->shaderfileAsts, desc->numShaders); //!!!
+        memset(ctx->shaderfileAsts, 0, desc->numShaders * sizeof *ctx->shaderfileAsts);
         for (int i = 0; i < sp->numFiles; i++) {
                 desc->fileInfo[i].fileID = sp->files[i].fileID;
                 desc->fileInfo[i].contents = sp->files[i].contents;
