@@ -191,7 +191,8 @@ static int compare_links(const void *a, const void *b)
 {
         const struct GP_Builder_Link *x = a;
         const struct GP_Builder_Link *y = b;
-        return strcmp(x->programID, y->shaderID);
+        int r = strcmp(x->programID, y->programID);
+        return r ? r : strcmp(x->shaderID, y->shaderID);
 }
 
 void gp_builder_process(struct GP_Builder *builder)
