@@ -8,6 +8,7 @@ static const struct {
         int character;
         int tokenKind;
 } tokInfo1[] = {
+        { '#', GP_TOKEN_HASH },
         { '(', GP_TOKEN_LEFTPAREN },
         { ')', GP_TOKEN_RIGHTPAREN },
         { '{', GP_TOKEN_LEFTBRACE },
@@ -40,8 +41,8 @@ static void compute_line_and_column(struct GP_Ctx *ctx, int *outLine, int *outCo
 {
         int line = 1;
         int column = 1;
-        for (int i = 0; i < ctx->cursorPos; i++) {
-                if (ctx->fileContents[i] == '\n') {
+        for (int i = 0; i < ctx->file.cursorPos; i++) {
+                if (ctx->file.contents[i] == '\n') {
                         line ++;
                         column = 0;
                 }
@@ -53,7 +54,7 @@ static void compute_line_and_column(struct GP_Ctx *ctx, int *outLine, int *outCo
         *outColumn = column;
 }
 
-void NORETURN _fatal_parse_error_fv(
+static void NORETURN _gp_fatal_parse_error_fv(
                 struct GP_LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, va_list ap)
 {
         int line;
@@ -61,43 +62,124 @@ void NORETURN _fatal_parse_error_fv(
         compute_line_and_column(ctx, &line, &column);
         _gp_fatal_begin(logCtx);
         gp_fatal_write_f("while parsing '%s' at %d:%d: ",
-                      ctx->filepath, line, column);
+                      ctx->file.fileID, line, column);
         gp_fatal_write_fv(fmt, ap);
         gp_fatal_end();
 }
 
-static void NORETURN _fatal_parse_error_f(
+static void NORETURN _gp_fatal_parse_error_f(
                 struct GP_LogCtx logCtx, struct GP_Ctx *ctx, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
-        _fatal_parse_error_fv(logCtx, ctx, fmt, ap);
+        _gp_fatal_parse_error_fv(logCtx, ctx, fmt, ap);
         va_end(ap);
 }
 
-#define fatal_parse_error_fv(ctx, fmt, ap) \
-        _fatal_parse_error_fv(GP_MAKE_LOGCTX(), (ctx), (fmt), (ap))
-#define fatal_parse_error_f(ctx, fmt, ...) \
-        _fatal_parse_error_f(GP_MAKE_LOGCTX(), (ctx), (fmt), ##__VA_ARGS__)
+#define gp_fatal_parse_error_fv(ctx, fmt, ap) \
+        _gp_fatal_parse_error_fv(GP_MAKE_LOGCTX(), (ctx), (fmt), (ap))
+#define gp_fatal_parse_error_f(ctx, fmt, ...) \
+        _gp_fatal_parse_error_f(GP_MAKE_LOGCTX(), (ctx), (fmt), ##__VA_ARGS__)
 
+/* Move the cursor that indicates the currently processed file position.
+ * If copying is not currently suspended, the (forward) range that is described
+ * by the move will be copied to the output buffer. */
+static void copy_remaining_bytes(struct GP_Ctx *ctx)
+{
+        if (!ctx->file.outputSuspended) {
+                // output range from current file
+                int startOffset = ctx->file.outputFilePosition;
+                int endOffset = ctx->file.indexOfFirstUnconsumedToken;
+                int size = endOffset - startOffset;
+                struct GP_ShaderfileAst *fa = &ctx->shaderfileAsts[ctx->currentShaderIndex];
+                int idx = fa->outputSize;
+                fa->outputSize += size;
+                REALLOC_MEMORY(&fa->output, fa->outputSize + 1);
+                memcpy(fa->output + idx, ctx->file.contents + startOffset, size);
+                fa->output[fa->outputSize] = '\0';
+        }
+        ctx->file.outputFilePosition = ctx->file.indexOfFirstUnconsumedToken;
+}
+
+static void suspend_copying(struct GP_Ctx *ctx)
+{
+        GP_ENSURE(!ctx->file.outputSuspended);
+        copy_remaining_bytes(ctx);
+        ctx->file.outputSuspended = 1;
+}
+
+static void resume_copying(struct GP_Ctx *ctx)
+{
+        GP_ENSURE(ctx->file.outputSuspended);
+        copy_remaining_bytes(ctx); //XXX. this won't copy but just move the outputFilePosition
+        ctx->file.outputSuspended = 0;
+}
+
+static void gp_push_file(struct GP_Ctx *ctx, int fileIndex)
+{
+        //gp_message_f("push file '%s'", ctx->desc.fileInfo[fileIndex].fileID);
+
+        /* first save the copy to the actual stack */
+        if (ctx->fileStackSize > 0)
+                ctx->fileStack[ctx->fileStackSize - 1] = ctx->file;
+
+        int i = ctx->fileStackSize++;
+        REALLOC_MEMORY(&ctx->fileStack, ctx->fileStackSize);
+
+        struct GP_FileInfo *fileInfo = &ctx->desc.fileInfo[fileIndex];
+        struct GP_FileStackItem fileStackItem = {
+                .fileID = fileInfo->fileID,
+                .contents = fileInfo->contents,
+                .size = fileInfo->size,
+                .cursorPos = 0,
+                .savedCharacter = -1,
+                .haveSavedCharacter = 0,
+                .outputFilePosition = 0,
+                .indexOfFirstUnconsumedToken = 0,
+                .outputSuspended = 0,
+        };
+        ctx->fileStack[i] = fileStackItem;
+        ctx->file = fileStackItem;
+}
+
+static void gp_pop_file(struct GP_Ctx *ctx)
+{
+        GP_ENSURE(ctx->fileStackSize > 0);
+        copy_remaining_bytes(ctx);
+        //gp_message_f("pop file '%s'", ctx->desc.fileInfo[ctx->fileStackSize - 1].fileID);
+        --ctx->fileStackSize;
+        if (ctx->fileStackSize > 0)
+                ctx->file = ctx->fileStack[ctx->fileStackSize - 1];
+}
+
+int gp_find_file_index_from_id_or_fatal_error(struct GP_Ctx *ctx, const char *fileID)
+{
+        for (int i = 0; i < ctx->desc.numFiles; i++)
+                if (!strcmp(fileID, ctx->desc.fileInfo[i].fileID))
+                        return i;
+        gp_fatal_parse_error_f(ctx, "No file with this fileID available: '%s'", fileID);
+}
 
 static int look_character(struct GP_Ctx *ctx)
 {
-        if (ctx->haveSavedCharacter)
-                return ctx->savedCharacter;
-        if (ctx->cursorPos == ctx->fileSize)
-                return -1;
-        int c = ctx->fileContents[ctx->cursorPos];
-        ctx->cursorPos++;
-        ctx->savedCharacter = c;
-        ctx->haveSavedCharacter = 1;
+        if (ctx->file.haveSavedCharacter)
+                return ctx->file.savedCharacter;
+        while (ctx->file.cursorPos == ctx->file.size) {
+                gp_pop_file(ctx);
+                if (ctx->fileStackSize == 0)
+                        return -1;
+        }
+        int c = ctx->file.contents[ctx->file.cursorPos];
+        ctx->file.cursorPos++;
+        ctx->file.savedCharacter = c;
+        ctx->file.haveSavedCharacter = 1;
         return c;
 }
 
 static void consume_character(struct GP_Ctx *ctx)
 {
-        GP_ENSURE(ctx->haveSavedCharacter);
-        ctx->haveSavedCharacter = 0;
+        GP_ENSURE(ctx->file.haveSavedCharacter);
+        ctx->file.haveSavedCharacter = 0;
 }
 
 static void reset_tokenbuffer(struct GP_Ctx *ctx)
@@ -121,7 +203,7 @@ static void append_to_tokenbuffer(struct GP_Ctx *ctx, int character)
         ctx->tokenBuffer[pos + 1] = '\0';
 }
 
-static int look_token(struct GP_Ctx *ctx)
+static int look_token_no_preproc(struct GP_Ctx *ctx)
 {
         if (ctx->haveSavedToken)
                 return 1;
@@ -137,20 +219,6 @@ skipwhitespace:
                 }
                 consume_character(ctx);
         }
-        /* currently we have very crude support for preprocess directives: Just ignoring them, like comments. */
-        if (c == '#') {
-                consume_character(ctx);
-                for (;;) {
-                        c = look_character(ctx);
-                        if (c == -1)
-                                fatal_parse_error_f(ctx,
-                                        "EOF encountered while expecting end of preprocessor directive");
-                        consume_character(ctx);
-                        if (c == '\n')
-                                break;
-                }
-                goto skipwhitespace;
-        }
         /* skip comments... */
         if (c == '/') {
                 consume_character(ctx);
@@ -160,7 +228,7 @@ skipwhitespace:
                         for (;;) {
                                 c = look_character(ctx);
                                 if (c == -1) {
-                                        fatal_parse_error_f(ctx,
+                                        gp_fatal_parse_error_f(ctx,
                         "EOF encountered while expecting end of comment");
                                 }
                                 consume_character(ctx);
@@ -275,7 +343,7 @@ skipwhitespace:
                                 goto ok;
                         }
                 }
-                fatal_parse_error_f(ctx,
+                gp_fatal_parse_error_f(ctx,
                                 "Failed to lex; initial character: '%c'", c);
 ok:
                 ;
@@ -288,6 +356,50 @@ static void consume_token(struct GP_Ctx *ctx)
 {
         GP_ENSURE(ctx->haveSavedToken);
         ctx->haveSavedToken = 0;
+        ctx->file.indexOfFirstUnconsumedToken = ctx->file.cursorPos;
+}
+
+static int look_token(struct GP_Ctx *ctx)
+{
+        if (!look_token_no_preproc(ctx))
+                return 0;
+        if (ctx->tokenKind != GP_TOKEN_HASH)
+                return 1;
+        /* We have a TOKEN_HASH. Suspend copying input to output until the end
+         * of this preprocessor directive. */
+        suspend_copying(ctx);
+        consume_token(ctx);
+        if (!look_token_no_preproc(ctx)
+            || ctx->tokenKind != GP_TOKEN_NAME)
+                gp_fatal_parse_error_f(ctx,
+                                "parse error while looking for name of preprocessing directive");
+        if (!strcmp(ctx->tokenBuffer, "include")) {
+                consume_token(ctx);
+                if (!look_token_no_preproc(ctx)
+                    || ctx->tokenKind != GP_TOKEN_STRING)
+                        gp_fatal_parse_error_f(ctx,
+                                        "Expected string literal giving file to #include");
+                consume_token(ctx);
+                /* TODO: make sure to resume _after end of line_ */
+                resume_copying(ctx);
+                /* TODO: make sure line is terminated after string literal token */
+                int fileIndex = gp_find_file_index_from_id_or_fatal_error(ctx, ctx->tokenBuffer);
+                gp_push_file(ctx, fileIndex);
+        }
+        else if (!strcmp(ctx->tokenBuffer, "version")) {
+                consume_token(ctx);
+                if (!look_token_no_preproc(ctx)
+                    || ctx->tokenKind != GP_TOKEN_LITERAL)
+                        gp_fatal_parse_error_f(ctx,
+                                        "Expected version num in #version directive");
+                consume_token(ctx);
+                resume_copying(ctx);
+        }
+        else {
+                gp_fatal_parse_error_f(ctx,
+                                "Unknown preprocessing directive: #%s", ctx->tokenBuffer);
+        }
+        return look_token(ctx);
 }
 
 static int is_keyword(struct GP_Ctx *ctx, const char *keyword)
@@ -326,7 +438,7 @@ static int look_token_kind(struct GP_Ctx *ctx, int tokenKind)
 static void expect_token_kind(struct GP_Ctx *ctx, int tokenKind)
 {
         if (!look_token_kind(ctx, tokenKind))
-                fatal_parse_error_f(ctx, "expected '%s' token, found: '%s'",
+                gp_fatal_parse_error_f(ctx, "expected '%s' token, found: '%s'",
                                     gp_tokenKindString[tokenKind],
                                     gp_tokenKindString[ctx->tokenKind]);
 }
@@ -415,7 +527,7 @@ static struct GP_TypeExpr *parse_typeexpr(struct GP_Ctx *ctx)
                 consume_token(ctx);
                 return NULL;
         }
-        fatal_parse_error_f(ctx, "type expected or interface block was expected, got: %s", ctx->tokenBuffer);
+        gp_fatal_parse_error_f(ctx, "type expected or interface block was expected, got: %s", ctx->tokenBuffer);
 }
 
 static struct GP_TypeExpr *parse_type_or_void(struct GP_Ctx *ctx)
@@ -444,7 +556,7 @@ static struct GP_VariableDecl *parse_variable(struct GP_Ctx *ctx)
                 inOrOut = 1;
         }
         else {
-                fatal_parse_error_f(ctx,
+                gp_fatal_parse_error_f(ctx,
                         "Invalid token %s, expected 'in' or 'out'",
                         ctx->tokenBuffer);
         }
@@ -466,7 +578,7 @@ static struct GP_UniformDecl *parse_uniform(struct GP_Ctx *ctx)
         struct GP_TypeExpr *typeExpr = parse_typeexpr(ctx);
         // currently parse_typeexpr may return NULL, but this is not valid for uniforms.
         if (typeExpr == NULL)
-                fatal_parse_error_f(ctx, "Can't use an interface block as a type for a uniform.");
+                gp_fatal_parse_error_f(ctx, "Can't use an interface block as a type for a uniform.");
         char *name = parse_name(ctx);
         parse_semicolon(ctx);
         struct GP_UniformDecl *uniformDecl = create_uniformdecl(ctx);
@@ -479,7 +591,7 @@ static struct GP_UniformDecl *parse_uniform(struct GP_Ctx *ctx)
 static void parse_expression(struct GP_Ctx *ctx)
 {
         if (!look_token(ctx))
-                fatal_parse_error_f(ctx, "Expected expression");
+                gp_fatal_parse_error_f(ctx, "Expected expression");
         if (ctx->tokenKind == GP_TOKEN_NAME) {
                 consume_token(ctx);
         }
@@ -500,7 +612,7 @@ static void parse_expression(struct GP_Ctx *ctx)
                                 goto ok;
                         }
                 }
-                fatal_parse_error_f(ctx, "Expected expression");
+                gp_fatal_parse_error_f(ctx, "Expected expression");
 ok:
                 ;
         }
@@ -592,7 +704,7 @@ static void parse_expression_stmt(struct GP_Ctx *ctx)
 static void parse_stmt(struct GP_Ctx *ctx)
 {
         if (!look_token(ctx))
-                fatal_parse_error_f(ctx, "Expected statement");
+                gp_fatal_parse_error_f(ctx, "Expected statement");
         if (ctx->tokenKind == GP_TOKEN_LEFTBRACE)
                 parse_compound_stmt(ctx);
         else if (is_known_type_name(ctx))
@@ -609,7 +721,6 @@ static void parse_stmt(struct GP_Ctx *ctx)
 
 static void parse_FuncDefn_or_FuncDecl(struct GP_Ctx *ctx)
 {
-        //message_f("Function!", ctx->tokenBufferLength);
         struct GP_TypeExpr *returnTypeExpr = parse_type_or_void(ctx);
         char *name = parse_name(ctx);
         parse_simple_token(ctx, GP_TOKEN_LEFTPAREN);
@@ -679,24 +790,10 @@ static int gp_compare_ProgramAttributes(const void *a, const void *b)
 
 static void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
 {
-        int fileIndex = -1;
-        for (int i = 0; i < ctx->desc.numFiles; i++)
-                if (!strcmp(ctx->desc.shaderInfo[shaderIndex].fileID, ctx->desc.fileInfo[i].fileID))
-                        fileIndex = i;
-        if (fileIndex == -1)
-                gp_fatal_f("No source file for shader '%s'",
-                        ctx->desc.shaderInfo[shaderIndex].shaderName);
-        const char *fileID = ctx->desc.fileInfo[fileIndex].fileID;
-        const char *fileContents = ctx->desc.fileInfo[fileIndex].contents;
-        int fileSize = ctx->desc.fileInfo[fileIndex].size;
+        const char *fileID = ctx->desc.shaderInfo[shaderIndex].fileID;
+        int fileIndex = gp_find_file_index_from_id_or_fatal_error(ctx, fileID);
 
-        ctx->filepath = fileID;
-        ctx->fileContents = fileContents;
-        ctx->fileSize = fileSize;
-
-        ctx->cursorPos = 0;
-        ctx->savedCharacter = -1;
-        ctx->haveSavedCharacter = 0;
+        gp_push_file(ctx, fileIndex);
 
         ctx->haveSavedToken = 0;
         ctx->tokenKind = GP_TOKEN_EOF;  // this is always valid. That's nice for error printing
@@ -727,16 +824,22 @@ static void gp_parse_shader(struct GP_Ctx *ctx, int shaderIndex)
                 else if (ctx->tokenKind == GP_TOKEN_NAME) {
                         parse_FuncDefn_or_FuncDecl(ctx);
                 }
-                else
-                        gp_message_f("Unexpected token type %s!",
+                else {
+                        gp_fatal_parse_error_f(ctx,
+                                "While expecting toplevel syntax item: Unexpected token type %s!",
                                   gp_tokenKindString[ctx->tokenKind]);
+                }
         }
 }
 
 static void gp_postprocess(struct GP_Ctx *ctx)
 {        
         /*
-        POST PROCESSING
+        for (int i = 0; i < ctx->desc.numShaders; i++) {
+                gp_message_f("And here is the preprocessor output for shader %s: \"\"\"\n%s\"\"\"\n",
+                             ctx->desc.shaderInfo[i].shaderName,
+                             ctx->shaderfileAsts[i].output);
+        }
         */
 
         for (int i = 0; i < ctx->desc.numShaders; i++) {

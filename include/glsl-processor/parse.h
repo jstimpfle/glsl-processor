@@ -47,6 +47,24 @@ struct GP_ProgramAttribute {
         char *attributeName;
 };
 
+/* for parsing state */
+struct GP_FileStackItem {
+        const char *fileID;
+        const char *contents;
+        int size;
+        int cursorPos;
+        int savedCharacter;
+        int haveSavedCharacter;
+
+        // we need to remember the file position from which we would start the
+        // next copy-input-to-output operation. Note that sometimes we skip a
+        // section.
+        int outputFilePosition;
+        int indexOfFirstUnconsumedToken;
+        // we can temporarily suppress copying input to output.
+        int outputSuspended;
+};
+
 struct GP_Ctx {
         // copy of input data
         struct GP_Desc desc;
@@ -65,12 +83,13 @@ struct GP_Ctx {
          * PARSING STATE
          */
 
-        const char *filepath;
-        const char *fileContents;
-        int fileSize;
-        int cursorPos;
-        int savedCharacter;
-        int haveSavedCharacter;
+        /* the file stack is used for processing #include directives -
+         * in general the parser reads from multiple files. */
+        struct GP_FileStackItem *fileStack;
+        int fileStackSize;
+        /* the current fileInfo is duplicated here, to simplify the code. */
+        struct GP_FileStackItem file;
+
         /* this is backing storage for dynamically allocated token data. It is
          * valid only for the last token that was lexed using this context. */
         int haveSavedToken;

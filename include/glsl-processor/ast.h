@@ -14,6 +14,7 @@ enum {
         GP_TOKEN_LITERAL,
         GP_TOKEN_NAME,
         GP_TOKEN_STRING,
+        GP_TOKEN_HASH,
         GP_TOKEN_LEFTPAREN,
         GP_TOKEN_RIGHTPAREN,
         GP_TOKEN_LEFTBRACE,
@@ -216,6 +217,9 @@ struct GP_ShaderfileAst {
         // For now, for simplicity and pointer stability, an array of pointers...
         struct GP_ToplevelNode **toplevelNodes;
         int numToplevelNodes;
+        /* preprocessed output */
+        char *output;
+        int outputSize;
 };
 
 extern const char *const gp_tokenKindString[GP_NUM_TOKEN_KINDS];
